@@ -3,5 +3,5 @@
 *.asv
 
 # Ignore path2sdpagmp -- modified by users, so do not track changes to it.
-extras/path2sdpagmp.m
+./extras/path2sdpagmp.m
 
