@@ -1,4 +1,4 @@
-function [sol,m,Q,residuals,everything] = solvesos_find_blocks(F,obj,options,params,candidateMonomials)
+function [sol,m,Q,residuals,everything] = solvesos_find_blocks(F,obj,options,params,candidateMonomials,candidateSymmetries)
 
 tol = options.sos.numblkdg;
 if tol > 1e-2
@@ -8,7 +8,7 @@ if tol > 1e-2
     disp(' ');
 end
 options.sos.numblkdg = 0;
-[sol,m,Q,residuals,everything] = solvesos(F,obj,options,params,candidateMonomials);
+[sol,m,Q,residuals,everything] = solvesos(F,obj,options,params,candidateMonomials,candidateSymmetries);
 
 % Save old structure to find out when we have stalled
 for i = 1:length(Q)

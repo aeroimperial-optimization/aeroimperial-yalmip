@@ -1,4 +1,4 @@
-function N = congruenceblocks(exponent_m,exponent_p,options,csclasses)
+function N = congruenceblocks(exponent_m,exponent_p,options,csclasses,candidateSymmetries)
 %CONGRUENCEBLOCKS Partitions monomials based on sign symmetry
 %
 % V = CONGRUENCEBLOCKS(P)
@@ -21,7 +21,8 @@ function N = congruenceblocks(exponent_m,exponent_p,options,csclasses)
 %
 % See also NEWTONREDUCE, NEWTONMONOMS, CONSISTENT
 
-% Author Johan Löfberg
+% Author Johan Lï¿½fberg
+% Modified by Giovanni Fantuzzi
 % $Id: congruenceblocks.m,v 1.2 2008-11-11 13:29:20 joloef Exp $
 
 sdpvarout = 0;
@@ -43,12 +44,25 @@ if nargin < 4
     csclasses = 1;
 end
 
-if ~isempty(exponent_m{1}) & options.sos.congruence>0 & ((size(exponent_p,2)<=16)  | options.sos.congruence==1)
+% Display?
+if options.sos.congruence > 0 && options.verbose > 0
+    fprintf('Finding symmetries..............');
+end
+
+% Test for congruence (i.e. symmetry reduction) only if cheap: either
+% cheap version, or fewer than 16 independent variables.
+if size(exponent_p,2) > 16 && options.sos.congruence > 1
+    options.sos.congruence=1;
+    if options.verbose > 0
+        fprintf('\nProblem too large: switching to sos.congruence=1 (cheap version)\n');
+        fprintf('Finding symmetries..............');
+    end
+end
+if ~isempty(exponent_m{1}) && options.sos.congruence>0
 
     % **********************************************
     % DEFINE CONGRUENCE CLASSES
     % **********************************************
-    if options.verbose>0;fprintf('Finding symmetries..............');end;
     n = size(exponent_p,2);
     t = cputime;
     switch options.sos.congruence
@@ -59,8 +73,26 @@ if ~isempty(exponent_m{1}) & options.sos.congruence>0 & ((size(exponent_p,2)<=16
         otherwise
             error('sos.congruence should be 0, 1 or 2')
     end
+    
+    % --------------------------------------------------------------------
+    % Giovanni Fantuzzi, 15/11/2019
+    % Add candidate symmetries provided by the user
+    if ~isempty(candidateSymmetries)
+       if size(candidateSymmetries,1) ~= n
+           error('Dimension of problem and of candidate symmetries mismatch.')
+       end
+       Htemp = [Htemp, candidateSymmetries];
+    end
+    % Find unique symmetries (fast version, works with probability 1)
+    % This means unique columns of Htemp
+    hash = randn(1,n);
+    [~,unique_idx] = unique(hash*Htemp);
+    Htemp = Htemp(:,unique_idx);
+    
+    % --------------------------------------------------------------------
+    
     %try
-        H = Htemp(:,find(~any(rem(exponent_p*Htemp,2),1))); % Find "even" rows
+        H = Htemp(:,~any(rem(exponent_p*Htemp,2),1)); % Find "even" rows
 %     catch
 %         i = [];
 %         % Loop instead
@@ -113,14 +145,13 @@ if ~isempty(exponent_m{1}) & options.sos.congruence>0 & ((size(exponent_p,2)<=16
     % PRINT SOME RESULTS
     % **********************************************
     if size(H,2)>=1
-        [uu,ii,oo] = uniquesafe(cellfun('prodofsize',N)/size(N{1},2));
+        [uu,~,oo] = uniquesafe(cellfun('prodofsize',N)/size(N{1},2));
         for i = 1:length(uu)
             n_this = length(find(oo==i));
-
             the_text = [the_text num2str(uu(i)) 'x' num2str(uu(i)) '(' num2str(n_this) ')' ' '];
         end
     end
-    if options.verbose>0;;disp(the_text);end;
+    if options.verbose>0; disp(the_text); end
 else
     N = exponent_m;
 end

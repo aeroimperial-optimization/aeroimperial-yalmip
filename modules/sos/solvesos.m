@@ -1,12 +1,12 @@
-function [sol,m,Q,residuals,everything] = solvesos(F,obj,options,params,candidateMonomials)
+function [sol,m,Q,residuals,everything] = solvesos(F,obj,options,params,candidateMonomials,candidateSymmetries)
 %SOLVESOS Sum of squares decomposition
 %
-%    [sol,m,B,residual] = solvesos(F,h,options,params,monomials) is used
-%    for finding SOS decompositions of polynomials.
+%    [sol,m,B,residual] = solvesos(F,h,options,params,monomials,symmetries)
+%    is used for finding SOS decompositions of polynomials.
 %
 %    The coefficients of the polynomials are assumed linear w.r.t a set of
 %    decision variables params and polynomial with respect to a variable x.
-%    
+%
 %    An extension with a nonlinear parameterization in params is possible.
 %    Note though that this gives BMIs or PMIs, solvable (locally) only if
 %    PENBMI is installed, or by specifying 'moment' as solver to try to
@@ -25,6 +25,9 @@ function [sol,m,Q,residuals,everything] = solvesos(F,obj,options,params,candidat
 %    options   : options structure obtained from SDPSETTINGS (can be [])
 %    params    : SDPVAR object defining parametric variables (can be [])
 %    monomials : SDPVAR object with user-specified monomials for decomposition (can be [])
+%    symmetries: cell array, symmetries{i} is a matrix whose COLUMNS define known sign
+%                symmetries of the i-th SOS constraint of F.
+%
 %
 %   OUTPUT
 %    sol       : Solution diagnostic from SDP problem
@@ -68,17 +71,20 @@ yalmip_time = clock;
 % ************************************************
 %% Check #inputs
 % ************************************************
-if nargin<5
-    candidateMonomials = [];
-    if nargin<4
-        params = [];
-        if nargin<3
-            options = sdpsettings;
-            if nargin<2
-                obj = [];
-                if nargin<1
-                    help solvesos
-                    return
+if nargin<6
+    candidateSymmetries = [];
+    if nargin<5
+        candidateMonomials = [];
+        if nargin<4
+            params = [];
+            if nargin<3
+                options = sdpsettings;
+                if nargin<2
+                    obj = [];
+                    if nargin<1
+                        help solvesos
+                        return
+                    end
                 end
             end
         end
@@ -109,7 +115,7 @@ if ~isempty(options)
     end
 end
 
-[F,obj,m,everything] = compilesos(F,obj,options,params,candidateMonomials);
+[F,obj,m,everything] = compilesos(F,obj,options,params,candidateMonomials,candidateSymmetries);
 
 p = everything.p;
 normp = everything.normp;
@@ -138,7 +144,7 @@ if sol.problem == 0
     else
         % We have to alter the problem slightly if there are rank
         % constraints on the decompositions
-        sol =  solveranksos(F,obj,options,ranks,BlockedQ);      
+        sol =  solveranksos(F,obj,options,ranks,BlockedQ);
     end
 end
 
@@ -198,12 +204,12 @@ if options.verbose > 0
         elseif options.sos.model == 2
             disp(' ')
             disp('-> Solver reported unboundness of the primal problem.')
-            disp('-> Your SOS problem is probably unbounded.')            
+            disp('-> Your SOS problem is probably unbounded.')
         end
     elseif sol.problem == 12
-            disp(' ')
-            disp('-> Solver reported unboundness or infeasibility of the primal problem.')
-            disp('-> Your SOS problem is probably unbounded.')            
+        disp(' ')
+        disp('-> Solver reported unboundness or infeasibility of the primal problem.')
+        disp('-> Your SOS problem is probably unbounded.')
     end
 end
 
@@ -241,7 +247,7 @@ if options.sos.impsparse == 1
             end
             doubleb{constraint}=normp(constraint)*double(Blockedb{constraint});
         end
-
+        
         % **********************************************
         %% Post-process
         % **********************************************
@@ -261,12 +267,12 @@ end
 % *********************************************
 switch sol.problem
     case {0,1,2,3,4,5} % Well, it didn't f**k up completely at-least
-
+        
         % *********************************************
         %% GENERATE MONOMIALS IN SOS-DECOMPOSITION
         % *********************************************
         for constraint = 1:length(p)
-
+            
             if constraint > 1 && isequal(BlockedN{constraint},BlockedN{constraint-1}) && isequal(Blockedx{constraint},Blockedx{constraint-1}) && isequal(Blockedvarchange{constraint},Blockedvarchange{constraint-1}) && isequal(sizep(constraint),sizep(constraint-1))
                 monoms{constraint} = monoms{constraint-1};
             else
@@ -290,7 +296,7 @@ switch sol.problem
                     monoms{constraint}=1;
                 end
             end
-
+            
             % For small negative eigenvalues
             % this is a good quick'n'dirty approximation
             % Improve...use shifted eigenvalues and chol or what ever...
@@ -315,11 +321,11 @@ switch sol.problem
                         [U,S,V]=svd(mid(Q{constraint}));
                         R = sqrt(S)*V';
                         h0 = R*monoms{constraint};
-
+                        
                         if isa(h0,'sdpvar')
                             h{constraint} = clean(R*monoms{constraint},options.sos.clean);
                             if isa(h{constraint},'sdpvar')
-                               h{constraint} = h{constraint}(findelements(sum(h{constraint},2)),:);                                
+                                h{constraint} = h{constraint}(findelements(sum(h{constraint},2)),:);
                             end
                         else
                             h{constraint} = h0;
@@ -347,9 +353,9 @@ switch sol.problem
                 end
             end
         end
-
+        
         m = monoms;
-
+        
     otherwise
         Q = [];
         m = [];

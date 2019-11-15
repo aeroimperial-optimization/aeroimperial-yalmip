@@ -1,4 +1,4 @@
-function [F,obj,m,everything] = compilesos(F,obj,options,params,candidateMonomials)
+function [F,obj,m,everything] = compilesos(F,obj,options,params,candidateMonomials,candidateSymmetries)
 %COMPILESOS Derive sum-of-squares model without solving
 %
 %    [F,obj,m] = compilesos(F,h,options,params,monomials) compiles the SOS
@@ -19,24 +19,27 @@ function [F,obj,m,everything] = compilesos(F,obj,options,params,candidateMonomia
 % NOTE: If you use compilesos together with optimizer to solve many sos
 % problems repeatedly, you must set sos.model option to 2. This is done
 % automatically if you define a sos problem directly through optimizer,
-% thus bypassing compilesos.  
-% 
+% thus bypassing compilesos.
+%
 % See also OPTIMIZE, SOS, OPTIMIZER
 
 % ************************************************
 %% Check #inputs
 % ************************************************
-if nargin<5
-    candidateMonomials = [];
-    if nargin<4
-        params = [];
-        if nargin<3
-            options = sdpsettings;
-            if nargin<2
-                obj = [];
-                if nargin<1
-                    help solvesos
-                    return
+if nargin<6
+    candidateSymmetries = [];
+    if nargin<5
+        candidateMonomials = [];
+        if nargin<4
+            params = [];
+            if nargin<3
+                options = sdpsettings;
+                if nargin<2
+                    obj = [];
+                    if nargin<1
+                        help solvesos
+                        return
+                    end
                 end
             end
         end
@@ -79,13 +82,14 @@ everything.UncertainData = [];
 everything.sol.problem = 0;
 
 % *************************************************************************
-%% Extract all SOS constraints and candidate monomials
+%% Extract all SOS constraints, candidate monomials and candidate symmetries
 % *************************************************************************
 if ~any(is(F,'sos'))
     error('At-least one constraint should be an SOS constraints!');
 end
 p = [];
 ranks = [];
+% Get SOS constraints
 for i = 1:length(F)
     if is(F(i),'sos')
         pi = sdpvar(F(i));
@@ -93,19 +97,36 @@ for i = 1:length(F)
         ranks(end+1) = getsosrank(pi); % Desired rank : Experimental code
     end
 end
+% Get candidate monomials
 if isempty(candidateMonomials)
     for i = 1:length(F)
         candidateMonomials{i}=[];
     end
 elseif isa(candidateMonomials,'sdpvar')
     cM=candidateMonomials;
-    candidateMonomials={};
+    candidateMonomials = cell(1,length(p));
     for i = 1:length(p)
         candidateMonomials{i}=cM;
     end
 elseif isa(candidateMonomials,'cell')
     if length(p)~=length(candidateMonomials)
         error('Dimension mismatch between the candidate monomials and the number of SOS constraints');
+    end
+end
+% Get candidate symmetries
+if isempty(candidateSymmetries)
+    for i = 1:length(F)
+        candidateSymmetries{i} = [];
+    end
+elseif ismatrix(candidateSymmetries)
+    cS=candidateSymmetries;
+    candidateSymmetries = cell(1,length(p));
+    for i = 1:length(p)
+        candidateSymmetries{i} = cS;
+    end
+elseif isa(candidateSymmetries,'cell')
+    if length(p)~=length(candidateSymmetries)
+        error('Dimension mismatch between the candidate symmetries and the number of SOS constraints');
     end
 end
 
@@ -124,7 +145,7 @@ end
 if ~isempty(yalmip('extvariables'))
     [F_parametric,failure] = expandmodel(F_parametric,obj,options);
     F_parametric = expanded(F_parametric,1);
-    obj = expanded(obj,1);    
+    obj = expanded(obj,1);
     if failure
         error('Could not expand the model');
     end
@@ -188,7 +209,7 @@ end
 % ************************************************
 IntegerData = 0;
 if ~isempty(ParametricVariables)
-    globalInteger =  [yalmip('binvariables') yalmip('intvariables')];    
+    globalInteger =  [yalmip('binvariables') yalmip('intvariables')];
     integerVariables = getvariables(F_parametric(find(is(F_parametric,'binary') | is(F_parametric,'integer'))));
     integerVariables = [integerVariables intersect(ParametricVariables,globalInteger)];
     integerVariables = intersect(integerVariables,ParametricVariables);
@@ -200,7 +221,7 @@ end
 % ************************************************
 UncertainData = 0;
 if ~isempty(ParametricVariables)
-    UncertainData = any(is(F_parametric,'uncertain'));  
+    UncertainData = any(is(F_parametric,'uncertain'));
 end
 
 % ************************************************
@@ -236,7 +257,7 @@ switch options.sos.model
         options.sos.model = 2;
     otherwise
 end
-             
+
 if ~isempty(yalmip('extvariables')) & options.sos.model == 2 & nargin<4
     disp(' ')
     disp('**Using nonlinear operators in SOS problems can cause problems.')
@@ -262,7 +283,7 @@ parobj = obj;
 obj    = [];
 
 % ************************************************
-%% SCALE SOS CONSTRAINTS 
+%% SCALE SOS CONSTRAINTS
 % ************************************************
 if options.sos.scale
     for constraint = 1:length(p)
@@ -304,7 +325,7 @@ if options.sos.newton
     tempops.verbose = 0;
     tempops.saveduals = 0;
     tempops.usex0 = 0;
-    [aux1,aux2,aux3,LPmodel] = export((temp>=0),temp,tempops);   
+    [aux1,aux2,aux3,LPmodel] = export((temp>=0),temp,tempops);
 else
     LPmodel = [];
 end
@@ -317,8 +338,10 @@ for constraint = 1:length(p)
     % *********************************************
     %% FIND THE VARIABLES IN p, SORT, UNIQUE ETC
     % *********************************************
-    if options.verbose>1;disp(['Creating SOS-description ' num2str(constraint) '/' num2str(length(p)) ]);end
-
+    if options.verbose>1
+        disp(['Creating SOS-description ' num2str(constraint) '/' num2str(length(p)) ]);
+    end
+    
     pVariables = depends(p{constraint});
     AllVariables = uniquestripped([pVariables ParametricVariables]);
     MonomVariables = setdiff1D(pVariables,ParametricVariables);
@@ -326,7 +349,7 @@ for constraint = 1:length(p)
     z = recover(AllVariables);
     MonomIndicies = find(ismember(AllVariables,MonomVariables));
     ParametricIndicies = find(ismember(AllVariables,ParametricVariables));
-
+    
     if isempty(MonomIndicies)
         % This is the case (sos(t)) where t is a parametric (matrix) variable
         % This used to create an error message befgore to avoid some silly
@@ -334,21 +357,23 @@ for constraint = 1:length(p)
         % stupid, but at the same time I can not remember where the bug was
         % and I have no regression test  for this case. To avoid
         % introducing same bug again by mistake, I create all data
-        % specifically for this case        
+        % specifically for this case
         previous_exponent_p_monoms = [];%exponent_p_monoms;
         n = length(p{constraint});
-        A_basis = getbase(sdpvar(n,n,'full'));d = find(triu(ones(n)));A_basis = A_basis(d,2:end);
+        A_basis = getbase(sdpvar(n,n,'full'));
+        d = find(triu(ones(n)));
+        A_basis = A_basis(d,2:end);
         BlockedA{constraint} = {A_basis};
-        Blockedb{constraint} = p{constraint}(d);        
+        Blockedb{constraint} = p{constraint}(d);
         BlockedN{constraint} = {zeros(1,0)};
         Blockedx{constraint} = x;
-        Blockedvarchange{constraint}=zeros(1,0);    
+        Blockedvarchange{constraint}=zeros(1,0);
         continue
         %  error('You have constraints of the type (sos(f(parametric_variables))). Please use (f(parametric_variables) > 0) instead')
     end
-
+    
     % *********************************************
-    %% Express p in monimials and coefficients  
+    %% Express p in monimials and coefficients
     % *********************************************
     [exponent_p,p_base] = getexponentbase(p{constraint},z);
     
@@ -358,10 +383,10 @@ for constraint = 1:length(p)
     % *********************************************
     if ~all(cellfun('isempty',candidateMonomials))
         exponent_c = [];
-        if isa(candidateMonomials{constraint},'cell')            
+        if isa(candidateMonomials{constraint},'cell')
             for i = 1:length(candidateMonomials{constraint})
-                 exponent_c{i} = getexponentbase(candidateMonomials{constraint}{i},z);
-                 exponent_c{i} = exponent_c{i}(:,MonomIndicies);
+                exponent_c{i} = getexponentbase(candidateMonomials{constraint}{i},z);
+                exponent_c{i} = exponent_c{i}(:,MonomIndicies);
             end
         else
             exponent_c{1} = getexponentbase(candidateMonomials{constraint},z);
@@ -370,7 +395,7 @@ for constraint = 1:length(p)
     else
         exponent_c = [];
     end
-
+    
     % *********************************************
     %% STUPID PROBLEM WITH ODD HIGHEST POWER?...
     % *********************************************
@@ -392,23 +417,23 @@ for constraint = 1:length(p)
             return
         end
     end
-
+    
     % *********************************************
     %% Can we make a smart variable change (no code)
     % *********************************************
     exponent_p_monoms = exponent_p(:,MonomIndicies);
     varchange = ones(1,size(MonomIndicies,2));
-
+    
     % *********************************************
     %% Unique monoms (copies due to parametric terms)
     % *********************************************
     exponent_p_monoms = uniquesafe(exponent_p_monoms,'rows');
-
-    if options.sos.reuse & constraint > 1 && isequal(previous_exponent_p_monoms,exponent_p_monoms)
+    
+    if options.sos.reuse && constraint > 1 && isequal(previous_exponent_p_monoms,exponent_p_monoms)
         % We don't have to do anything, candidate monomials can be-used
-        if options.verbose>1;disp(['Re-using all candidate monomials (same problem structure)']);end
+        if options.verbose>1;disp('Re-using all candidate monomials (same problem structure)');end
     else
-
+        
         % *********************************************
         % User has supplied the whole candidate structure
         % Don't process this
@@ -425,40 +450,42 @@ for constraint = 1:length(p)
             %% CORRELATIVE SPARSITY PATTERN
             % *********************************************
             [C,csclasses] = corrsparsity(exponent_p_monoms,options);
-
+            
             % *********************************************
             %% GENERATE MONOMIALS
             % *********************************************
             exponent_m = monomialgeneration(exponent_p_monoms,csclasses);
-
+            
             % *********************************************
             %% REDUCE #of MONOMIALS
             % *********************************************
             % Fix for matrix case, perform newton w.r.t
             % diagonal polynomials only. This can be
             % improved, but for now, keep it simple...
-            n = length(p{constraint});diag_elements = 1:(n+1):n^2;used_diagonal = find(any(p_base(diag_elements,:),1));
+            n = length(p{constraint});
+            diag_elements = 1:(n+1):n^2;
+            used_diagonal = find(any(p_base(diag_elements,:),1));
             exponent_p_monoms_diag = exponent_p(used_diagonal,MonomIndicies);
             exponent_m = monomialreduction(exponent_m,exponent_p_monoms_diag,options,csclasses,LPmodel);
-
+            
             % *********************************************
             %% BLOCK PARTITION THE MONOMIALS BY CONGRUENCE
             % *********************************************
-            N = congruenceblocks(exponent_m,exponent_p_monoms,options,csclasses);
+            N = congruenceblocks(exponent_m,exponent_p_monoms,options,csclasses,candidateSymmetries{constraint});
             % *********************************************
             %% REDUCE FURTHER BY EXPLOITING BLOCK-STRUCTURE
             % *********************************************
             N = blockmonomialreduction(exponent_p_monoms_diag,N,options);
             
         end
-
-
+        
+        
         % *********************************************
         %% PREPARE FOR SDP FORMULATION BY CALCULATING ALL
         % POSSIBLE MONOMIAL PRODUCS IN EACH BLOCK
         % *********************************************
         [exponent_m2,N_unique] = monomialproducts(N);
-
+        
         % *********************************************
         %% CHECK FOR BUG/IDIOT PROBLEMS IN FIXED PROBLEM
         % *********************************************
@@ -476,9 +503,9 @@ for constraint = 1:length(p)
             end
         end
     end
-
+    
     previous_exponent_p_monoms = exponent_p_monoms;
-
+    
     % *********************************************
     %% GENERATE DATA FOR SDP FORMULATIONS
     % *********************************************
@@ -490,7 +517,7 @@ for constraint = 1:length(p)
         end
     end
     [BlockedA{constraint},Blockedb{constraint}] = generate_kernel_representation_data(N,N_unique,exponent_m2,exponent_p,p{constraint},options,p_base_parametric,ParametricIndicies,MonomIndicies,constraint==1);
-
+    
     % SAVE FOR LATER
     BlockedN{constraint} = N;
     Blockedx{constraint} = x;
@@ -514,11 +541,11 @@ switch options.sos.model
     case {2,4,5,6}
         % 2=Image model, 4=reduced nonlinear, 5=dd,6=sd
         [F,obj,BlockedQ,sol] = create_imagemodel(BlockedA,Blockedb,F_parametric,parobj,options);
-
+        
     case 3
         % Un-official model to solve bilinearly parameterized SOS using SDPLR
         [F,obj,options] = create_lrmodel(BlockedA,Blockedb,F_parametric,parobj,options,ParametricVariables);
-
+        
     otherwise
 end
 
@@ -546,7 +573,7 @@ for constraint = 1:length(p)
             monoms{constraint}=1;
         end
     end
-
+    
 end
 m = monoms;
 
