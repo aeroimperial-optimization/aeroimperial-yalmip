@@ -41,15 +41,8 @@ Restart Matlab, or at least type "clear classes".
 6)
 Run yalmiptest.m and everything should work (as long as you have the necessary solvers).
 
-Learn more at
-yalmip.github.io
-
-Forum
-https://groups.google.com/forum/?fromgroups#!forum/yalmip
-
-*****************************************
 
 Comments and bug-reports are higly appreciated.
 
-Johan Löfberg, Linköping University
-johan.lofberg@liu.se
+Giovanni Fantuzzi,
+Imperial College London
