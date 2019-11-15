@@ -889,6 +889,14 @@ solver(i).constraint.equalities.linear = 0;
 i = i+1;
 
 solver(i) = sdpsolver;
+solver(i).tag     = 'SDPA_GMP';
+solver(i).version = '';
+solver(i).checkfor= {'sdpagmp.m'};
+solver(i).call    = 'callsdpagmp';
+solver(i).constraint.equalities.linear = 0;
+i = i+1;
+
+solver(i) = sdpsolver;
 solver(i).tag     = 'CDCS';
 solver(i).version = '';
 solver(i).checkfor= {'cdcs'};
