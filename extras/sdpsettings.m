@@ -253,6 +253,9 @@ else
     options.sdpa = setup_sdpa_options;
     Names = appendOptionNames(Names,options.sdpa,'sdpa');
     
+    options.sdpa_gmp = setup_sdpa_gmp_options;
+    Names = appendOptionNames(Names,options.sdpa,'sdpa_gmp');
+    
     options.sdplr = setup_sdplr_options;
     Names = appendOptionNames(Names,options.sdplr,'sdplr');
     
@@ -1037,6 +1040,20 @@ sdpa.gammaStar  = 0.9 ;
 sdpa.epsilonDash  = 1.0E-7 ;
 sdpa.isSymmetric = 0 ;
 
+function sdpa_gmp = setup_sdpa_gmp_options
+sdpa_gmp.maxIteration = 200 ;
+sdpa_gmp.epsilonStar = 1.0E-25;
+sdpa_gmp.lambdaStar  = 1.0E6  ;
+sdpa_gmp.omegaStar  = 2.0 ;
+sdpa_gmp.lowerBound  = -1.0E25  ;
+sdpa_gmp.upperBound  = 1.0E25  ;
+sdpa_gmp.betaStar  = 0.1  ;
+sdpa_gmp.betaBar  = 0.2 ;
+sdpa_gmp.gammaStar  = 0.7 ;
+sdpa_gmp.epsilonDash  = 1.0E-25 ;
+sdpa_gmp.precision = 200 ;
+sdpa_gmp.path2sdpagmp = path2sdpagmp() ;
+
 function sdplr = setup_sdplr_options
 sdplr.feastol = 1e-5;
 sdplr.centol = 1e-1;
@@ -1280,3 +1297,4 @@ try
 catch
     pop.param = [];
 end
+
