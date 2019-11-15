@@ -76,211 +76,211 @@ if (nargin>0) && isstruct(varargin{1})
 else
     Names = {};
     paramstart = 1;
-
+    
     options = setup_core_options;
     Names = appendOptionNames(Names,options);
-
+    
     % Internal solver frameworks
     options.bisection = setup_bisection_options;
     Names = appendOptionNames(Names,options.bisection,'bisection');
-
+    
     options.bilevel = setup_bilevel_options;
     Names = appendOptionNames(Names,options.bilevel,'bilevel');
-
+    
     options.bmibnb = setup_bmibnb_options;
     Names = appendOptionNames(Names,options.bmibnb,'bmibnb');
-
+    
     options.bnb = setup_bnb_options;
     Names = appendOptionNames(Names,options.bnb,'bnb');
-
+    
     options.cutsdp = setup_cutsdp_options;
     Names = appendOptionNames(Names,options.cutsdp,'cutsdp');
-
+    
     options.kkt = setup_kkt_options;
     Names = appendOptionNames(Names,options.kkt,'kkt');
-
+    
     options.moment = setup_moment_options;
     Names = appendOptionNames(Names,options.moment,'moment');
-
+    
     options.mp = setup_mp_options;
     Names = appendOptionNames(Names,options.mp,'mp');
-
+    
     options.mpcvx = setup_mpcvx_options;
     Names = appendOptionNames(Names,options.mpcvx,'mpcvx');
-
+    
     options.plot = setup_plot_options;
     Names = appendOptionNames(Names,options.plot,'plot');
-
+    
     options.robust = setup_robust_options;
     Names = appendOptionNames(Names,options.robust,'robust');
-
+    
     options.sos = setup_sos_options;
     Names = appendOptionNames(Names,options.sos,'sos');
-
+    
     options.refiner = setup_refiner_options;
     Names = appendOptionNames(Names,options.refiner,'refiner');
-
-    % External solvers  
+    
+    % External solvers
     options.baron = setup_baron_options;
     Names = appendOptionNames(Names,options.baron,'baron');
-
+    
     options.bintprog = setup_bintprog_options;
     Names = appendOptionNames(Names,options.bintprog,'bintprog');
-
+    
     options.bonmin = setup_bonmin_options;
     Names = appendOptionNames(Names,options.bonmin,'bonmin');
-
+    
     options.cdcs = setup_cdcs_options;
     Names = appendOptionNames(Names,options.cdcs,'cdcs');
-
+    
     options.cdd = setup_cdd_options;
     Names = appendOptionNames(Names,options.cdd,'cdd');
-
+    
     options.cbc = setup_cbc_options;
     Names = appendOptionNames(Names,options.cbc,'cbc');
-
+    
     options.clp = setup_clp_options;
     Names = appendOptionNames(Names,options.clp,'clp');
-
+    
     options.cplex = setup_cplex_options;
     Names = appendOptionNames(Names,options.cplex,'cplex');
-
+    
     options.csdp = setup_csdp_options;
     Names = appendOptionNames(Names,options.csdp,'csdp');
-
+    
     options.dsdp = setup_dsdp_options;
     Names = appendOptionNames(Names,options.dsdp,'dsdp');
-
+    
     options.ecos = setup_ecos_options;
     Names = appendOptionNames(Names,options.ecos,'ecos');
-
+    
     options.filtersd = setup_filtersd_options;
     Names = appendOptionNames(Names,options.filtersd,'filtersd');
-
+    
     options.fmincon = setup_fmincon_options;
     Names = appendOptionNames(Names,options.fmincon,'fmincon');
-
+    
     options.fminsearch = setup_fminsearch_options;
     Names = appendOptionNames(Names,options.fminsearch,'fminsearch');
-
+    
     options.frlib = setup_frlib_options;
     Names = appendOptionNames(Names,options.frlib,'frlib');
-
+    
     options.glpk = setup_glpk_options;
     Names = appendOptionNames(Names,options.glpk,'glpk');
-
+    
     options.gurobi = setup_gurobi_options;
     Names = appendOptionNames(Names,options.gurobi,'gurobi');
-
+    
     options.ipopt = setup_ipopt_options;
     Names = appendOptionNames(Names,options.ipopt,'ipopt');
-
+    
     options.intlinprog = setup_intlinprog_options;
     Names = appendOptionNames(Names,options.intlinprog,'intlinprog');
-
+    
     options.knitro = setup_knitro_options;
     Names = appendOptionNames(Names,options.knitro,'knitro');
-
+    
     options.linprog = setup_linprog_options;
     Names = appendOptionNames(Names,options.linprog,'linprog');
-
+    
     options.lmilab = setup_lmilab_options;
     Names = appendOptionNames(Names,options.lmilab,'lmilab');
-
+    
     options.lmirank = setup_lmirank_options;
     Names = appendOptionNames(Names,options.lmirank,'lmirank');
-
+    
     options.logdetppa = setup_logdetppa_options;
     Names = appendOptionNames(Names,options.logdetppa,'logdetppa');
-
+    
     options.lpsolve = setup_lpsolve_options;
     Names = appendOptionNames(Names,options.lpsolve,'lpsolve');
-
+    
     options.lsqnonneg = setup_lsqnonneg_options;
     Names = appendOptionNames(Names,options.lsqnonneg,'lsqnonneg');
-
+    
     options.lsqlin = setup_lsqlin_options;
     Names = appendOptionNames(Names,options.lsqlin,'lsqlin');
-
+    
     options.kypd = setup_kypd_options;
     Names = appendOptionNames(Names,options.kypd,'kypd');
-
+    
     options.nag = setup_nag_options;
     Names = appendOptionNames(Names,options.nag,'nag');
-
+    
     options.mosek = setup_mosek_options;
     Names = appendOptionNames(Names,options.mosek,'mosek');
-
+    
     options.nomad = setup_nomad_options;
     Names = appendOptionNames(Names,options.nomad,'nomad');
-
+    
     options.ooqp = setup_ooqp_options;
     Names = appendOptionNames(Names,options.ooqp,'ooqp');
-
+    
     options.penbmi = setup_penbmi_options;
     Names = appendOptionNames(Names,options.penbmi,'penbmi');
-
+    
     options.penlab = setup_penlab_options;
     Names = appendOptionNames(Names,options.penlab,'penlab');
-
+    
     options.pensdp = setup_pensdp_options;
     Names = appendOptionNames(Names,options.pensdp,'pensdp');
-
+    
     options.pop = setup_pop_options;
     Names = appendOptionNames(Names,options.pop,'pop');
-
+    
     options.qpoases = setup_qpoases_options;
     Names = appendOptionNames(Names,options.qpoases,'qpoases');
-
+    
     options.osqp = setup_osqp_options;
     Names = appendOptionNames(Names,options.osqp,'osqp');
-
+    
     options.qsopt = setup_qsopt_options;
     Names = appendOptionNames(Names,options.qsopt,'qsopt');
-
+    
     options.quadprog = setup_quadprog_options;
     Names = appendOptionNames(Names,options.quadprog,'quadprog');
-
+    
     options.quadprogbb = setup_quadprogbb_options;
     Names = appendOptionNames(Names,options.quadprogbb,'quadprogbb');
-
+    
     options.scip = setup_scip_options;
     Names = appendOptionNames(Names,options.scip,'scip');
-
+    
     options.scs = setup_scs_options;
     Names = appendOptionNames(Names,options.scs,'scs');
-
+    
     options.sdpa = setup_sdpa_options;
     Names = appendOptionNames(Names,options.sdpa,'sdpa');
-
+    
     options.sdplr = setup_sdplr_options;
     Names = appendOptionNames(Names,options.sdplr,'sdplr');
-
+    
     options.sdpt3 = setup_sdpt3_options;
     Names = appendOptionNames(Names,options.sdpt3,'sdpt3');
-
+    
     options.sdpnal = setup_sdpnal_options;
     Names = appendOptionNames(Names,options.sdpnal,'sdpnal');
-
+    
     options.sedumi = setup_sedumi_options;
     Names = appendOptionNames(Names,options.sedumi,'sedumi');
-
+    
     options.sparsepop = setup_sparsepop_options;
     Names = appendOptionNames(Names,options.sparsepop,'sparsepop');
-
+    
     options.sparsecolo = setup_sparsecolo_options;
     Names = appendOptionNames(Names,options.sparsecolo,'sparsecolo');
-
+    
     options.vsdp = setup_vsdp_options;
     Names = appendOptionNames(Names,options.vsdp,'vsdp');
-
+    
     options.xpress = setup_xpress_options;
     Names = appendOptionNames(Names,options.xpress,'xpress');
     
     options.default.cplex = options.cplex;
     options.default.gurobi = options.gurobi;
-    options.default.mosek = options.mosek;   
-    options.default.osqp = options.osqp;   
+    options.default.mosek = options.mosek;
+    options.default.osqp = options.osqp;
 end
 
 names = lower(Names);
@@ -292,14 +292,14 @@ end
 expectval = 0;                          % start expecting a name, not a value
 while i <= nargin
     arg = varargin{i};
-
+    
     if ~expectval
         if ~ischar(arg)
             error(sprintf('Expected argument %d to be a string property name.', i));
         end
-
+        
         lowArg = strtrim(lower(arg));
-
+        
         j = strmatch(lowArg,names);
         if isempty(j)                       % if no matches
             error(sprintf('Unrecognized property name ''%s''.', arg));
@@ -365,7 +365,7 @@ if nargin == 1
 end
 
 cNames = fieldnames(options);
-for i = 1:length(cNames)    
+for i = 1:length(cNames)
     temporaryOptions = getfield(options,cNames{i});
     if isa(temporaryOptions,'struct')
         cNames = [cNames;recursivefieldnames(temporaryOptions,[cNames{i}])];
@@ -560,7 +560,9 @@ sos.congruence = 2;
 sos.scale = 1;
 sos.numblkdg = 0;
 sos.postprocess = 0;
-sos.csp = 0;
+sos.csp = 0;                    % Sparsity detection
+sos.csp_chordal_extension = 0;  % Chordal extension
+sos.csp_ordering = 'amd';       % ordering for extension: 'amd' or 'rcm'
 sos.extlp = 1;
 sos.impsparse = 0;
 sos.sparsetol = 1e-5;
@@ -614,10 +616,10 @@ end
 
 function cplex = setup_cplex_options
 try
-
+    
     cplex = cplexoptimset('cplex');
-	cplex.output.clonelog = 0;
-
+    cplex.output.clonelog = 0;
+    
 catch
     try
         % cplex has p-compiled somehow in a manner in which
@@ -766,9 +768,9 @@ gurobi.Threads = 0;
 function intlinprog = setup_intlinprog_options
 try
     intlinprog = optimoptions('intlinprog');
-%     if ~isa(intlinprog,'struct');
-%         evalc(['intlinprog = struct(intlinprog);']);
-%     end
+    %     if ~isa(intlinprog,'struct');
+    %         evalc(['intlinprog = struct(intlinprog);']);
+    %     end
 catch
     intlinprog = [];
 end
@@ -1059,7 +1061,7 @@ try
     ipopt.max_iter = 1500;
     ipopt.max_cpu_time = 1000;
     ipopt.tol = 1e-7;
-    ipopt = rmfield(ipopt,'pardiso_order'); 
+    ipopt = rmfield(ipopt,'pardiso_order');
     ipopt = rmfield(ipopt,'pardiso_redo_symbolic_fact_only_if_inertia_wrong');
     
 catch
