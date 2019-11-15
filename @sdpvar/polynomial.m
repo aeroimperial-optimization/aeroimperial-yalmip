@@ -1,4 +1,4 @@
-function [p,c,v] = polynomial(x,dmax,dmin)
+function [p,c,v] = polynomial(x,dmax,dmin,symmetries)
 %POLYNOMIAL Creates parameterized polynomial
 %
 % [p,c,v] = polynomial(x,dmax,dmin)
@@ -41,7 +41,7 @@ if any(dmin < 0)
     error('Only non-negative polynomial degrees possible')
 end
 
-v = monolist(x,dmax);
+v = monolist(x,dmax,0,symmetries);
 
 if dmin <= dmax & dmin>0
     s = nchoosek(length(x) + dmin-1,dmin-1);

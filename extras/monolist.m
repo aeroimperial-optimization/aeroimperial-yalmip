@@ -1,9 +1,13 @@
-function new_x = monolist(x,dmax,dmin)
+function new_x = monolist(x,dmax,dmin,symmetries)
 % MONOLIST Generate monomials
 %
-% y = MONOLIST(x,dmax,dmin)
+% y = MONOLIST(x,dmax,dmin,symmetries)
 %
 % Returns the monomials [1 x(1) x(1)^2 ... x(1)^dmax(1) x(2) x(1)x(2)  etc...]
+% The optional input "symmetries" is a length(x)-by-m matrix of 1s and 0s
+% specifying desired sign symmetries of the monomials in the list (1s
+% denote entries of x for which the sign is changed under the symmetry
+% transformation).
 %
 % >>sdpvar x y z
 % >>sdisplay(monolist([x y z],4))
@@ -18,100 +22,66 @@ function new_x = monolist(x,dmax,dmin)
 x = reshape(x,1,length(x));
 x_orig = x;
 
+if nargin == 2; dmin = 0; end
 if nargin == 3
     if length(dmin)>1 || any(dmin > dmax) || ~isequal(dmin,fix(dmin))
         error('dmin has to be an integer scalar larger than dmax');
     end
-elseif nargin == 2
-    dmin = 0;
 end
+if nargin < 4; symmetries = []; end
+if isempty(dmin); dmin = 0; end
 
-if (length(dmax)==1 | all(dmax(1)==dmax)) & islinear(x) & ~isa(x,'ncvar')
+if (length(dmax)==1 || all(dmax(1)==dmax)) && islinear(x) && ~isa(x,'ncvar')
     dmax = dmax(1);
     % Powers in monomials
-    powers = monpowers(length(x),dmax);
-   
-    powers = powers(find(sum(powers,2)>=dmin),:);
+    powers = monpowers(length(x),dmax,symmetries);
+    powers = powers(sum(powers,2)>=dmin,:);
     
     % Use fast method for x^alpha
     if isequal(getbase(x),[zeros(length(x),1) eye(length(x))])
         new_x = recovermonoms(powers,x);
         return
     end
-
+    
     % Monolist on dense vectors is currently extremely slow, but also
     % needed in some applications (stability analysis using SOS) For
     % performance issue, the code below is hard-coded for special cases
     % FIX : Urgent, find underlying indexing...
     
     % Vectorize quadratic and quadrtic case
-    if dmax==2 & length(x)>1
+    if dmax==2 && length(x)>1
         V=x.'*[1 x];
         ind=funkyindicies(length(x));
         new_x = [1 V(ind(:)).'].';
         return
-    elseif (length(x)==4 & dmax==6)
-        
-         ind =[    1           2           3           4           5           6           7           8,
-
-           9          10          11          12          13          14          15          16,
-
-          17          18          19          20          21          22          23          24,
-
-          25          26          27          28          29          30          31          32,
-
-          33          34          49          50          51          52          86          53,
-
-          54          55          89          56          57          91          58          92,
-
-         126          59          60          61          95          62          63          97,
-
-          64          98         132          65          66         100          67         101,
-
-
-         135          68         102         136         170         185         186         187,
-
-         188         222         256         189         190         191         225         259,
-
-
-         192         193         227         261         194         228         262         296,
-
-         330         364         195         196         197         231         265         198,
-
-         199         233         267         200         234         268         302         336,
-
-         370         201         202         236         270         203         237         271,
-
-         305         339         373         204         238         272         306         340,
-
-         374         408         442         476         510         525         526         527,
-
-         528         562         596         630         529         530         531         565,
-
-
-         599         633         532         533         567         601         635         534,
-
-
-         568         602         636         670         704         738         772         806,
-
-
-         840         535         536         537         571         605         639         538,
-
-         539         573         607         641         540         574         608         642,
-
-         676         710         744         778         812         846         541         542,
-
-         576         610         644         543         577         611         645         679,
-
-         713         747         781         815         849         544         578         612,
-
-
-         646         680         714         748         782         816         850         884,
-
-
-         918         952         986        1020        1054        1088        1122        1156,
-
-        1190          0            0          0          0             0           0            0];
+    elseif (length(x)==4 && dmax==6)
+        ind =[    1           2           3           4           5           6           7           8, ...
+            9          10          11          12          13          14          15          16, ...
+            17          18          19          20          21          22          23          24, ...
+            25          26          27          28          29          30          31          32, ...
+            33          34          49          50          51          52          86          53, ...
+            54          55          89          56          57          91          58          92, ...
+            126          59          60          61          95          62          63          97, ...
+            64          98         132          65          66         100          67         101, ...
+            135          68         102         136         170         185         186         187, ...
+            188         222         256         189         190         191         225         259, ...
+            192         193         227         261         194         228         262         296, ...
+            330         364         195         196         197         231         265         198, ...
+            199         233         267         200         234         268         302         336, ...
+            370         201         202         236         270         203         237         271, ...
+            305         339         373         204         238         272         306         340, ...
+            374         408         442         476         510         525         526         527, ...
+            528         562         596         630         529         530         531         565, ...
+            599         633         532         533         567         601         635         534, ...
+            568         602         636         670         704         738         772         806, ...
+            840         535         536         537         571         605         639         538, ...
+            539         573         607         641         540         574         608         642, ...
+            676         710         744         778         812         846         541         542, ...
+            576         610         644         543         577         611         645         679, ...
+            713         747         781         815         849         544         578         612, ...
+            646         680         714         748         782         816         850         884, ...
+            918         952         986        1020        1054        1088        1122        1156, ...
+            1190          0            0          0          0             0           0            0];
         ind = ind';
         ind = ind(find(ind));
         v=monolist(x,3);
@@ -121,7 +91,6 @@ if (length(dmax)==1 | all(dmax(1)==dmax)) & islinear(x) & ~isa(x,'ncvar')
     elseif dmax==4 & (1<=length(x)) & length(x)<=4 %& length(x)>1
         v=monolist(x,2);
         V=v(2:end)*v.';
-
         % Cone to generate indicies
         %p = sdpvar(n,1);
         %v = monolist(p,2);
@@ -131,7 +100,6 @@ if (length(dmax)==1 | all(dmax(1)==dmax)) & islinear(x) & ~isa(x,'ncvar')
         %for i = 2:length(m)
         % ind = [ind min(find(~any(V-m(i))))];
         %end
-
         switch length(x)
             case 1
                 new_x = [1; V([1 2 4 6]')];
@@ -148,8 +116,7 @@ if (length(dmax)==1 | all(dmax(1)==dmax)) & islinear(x) & ~isa(x,'ncvar')
             otherwise
         end
     end
-
-
+    
     % Na, we have things like (c'x)^alpha
     % precalc x^p
     for i = 1:length(x)
@@ -160,27 +127,21 @@ if (length(dmax)==1 | all(dmax(1)==dmax)) & islinear(x) & ~isa(x,'ncvar')
             precalc{i,j} = temp;
         end
     end
-
     new_x = [];
-
     for i = 1:size(powers,1) % All monomials
         temp = 1;
-
         for j = 1:size(powers,2) % All variables
             if powers(i,j)>0
                 temp = temp*precalc{j,powers(i,j)};
             end
         end
         new_x = [new_x temp];
-
     end
-
+    
 else
-
+    % In this case, symmetries are ignored
     dmax = dmax(:)*ones(1,length(x_orig));
-
     x = [1 x];
-
     % Lame loop to generate all combinations
     new_x = 1;
     for j = 1:1:max(dmax)
@@ -202,6 +163,7 @@ else
         dmax = dmax(setdiff(1:length(dmax),remv));
     end
 end
+
 new_x = reshape(new_x(:),length(new_x),1);
 if dmin > 0
     for i = 1:length(new_x)
@@ -216,12 +178,23 @@ if dmin > 0
     end
 end
 
-function ind = funkyindicies(n)
+end
 
+% ----------------------------------------------------------------------- %
+function ind = funkyindicies(n)
 M=reshape(1:n*(n+1),n,n+1);
 ind = M(:,1)';
 for i = 1:n
     ind = [ind M(i,2:i+1)];
 end
+end
+% ----------------------------------------------------------------------- %
 
+% ----------------------------------------------------------------------- %
+function powers = applySymmetries(powers,symmetries)
+% find rows of powers that represent monomials that are invariant under
+% all symmetries specified by the user
+H = rem(powers*symmetries,2)==0;
+powers = powers(all(H,2),:);
+end
 
