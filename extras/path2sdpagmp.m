@@ -5,6 +5,7 @@ function out = path2sdpagmp()
 % See also setpath2sdpagmp
 
 % Do in two setps for compatibility with setpath2sdpagmp
-path = '/usr/local/bin' ;
+path = '/usr/local/bin/' ;
 out = path;
+
 
