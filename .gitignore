@@ -8,6 +8,9 @@
 *.mexw32
 *.mexw64
 
+# Ignore path2sdpagmp
+./extras/path2sdpagmp.m
+
 # Ignore sdpagmp temp files
 *param.sdpa
 *sdpagmp_in.dat-s
