@@ -33,6 +33,10 @@ if nargin<3
     dmin = 0;
 end
 
+if nargin < 4
+    symmetries = [];
+end
+
 if any(dmin > dmax)
     error('Third argument (dmin) should not be larger than second argument (dmax)');
 end
