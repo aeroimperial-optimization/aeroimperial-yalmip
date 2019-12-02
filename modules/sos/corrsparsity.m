@@ -59,7 +59,7 @@ if options.sos.csp
         [uu,~,oo] = unique(cellfun('prodofsize',D));
         for i = 1:length(uu)
             n_this = length(find(oo==i));
-            the_text = [the_text num2str(uu(i)) '(' num2str(n_this) ')' ' '];
+            the_text = [num2str(uu(i)) '(' num2str(n_this) ')' ' '];
         end
         fprintf([the_text,'\n']);
     end
