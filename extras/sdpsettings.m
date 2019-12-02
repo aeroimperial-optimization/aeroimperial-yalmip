@@ -117,6 +117,9 @@ else
     options.sos = setup_sos_options;
     Names = appendOptionNames(Names,options.sos,'sos');
     
+    options.sparsemoment = setup_sparsemoment_options;
+    Names = appendOptionNames(Names,options.moment,'sparsemoment');
+    
     options.refiner = setup_refiner_options;
     Names = appendOptionNames(Names,options.refiner,'refiner');
     
@@ -528,6 +531,9 @@ moment.solver = '';
 moment.refine = 0;
 moment.extractrank = 0;
 moment.rceftol = -1;
+function sparsemoment = setup_sparsemoment_options
+sparsemoment.order = [];
+sparsemoment.mergeCliques = 1;
 function mpcvx = setup_mpcvx_options
 mpcvx.solver = '';
 mpcvx.absgaptol = 0.25;
