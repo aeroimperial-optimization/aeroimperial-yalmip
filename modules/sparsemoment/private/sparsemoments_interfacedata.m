@@ -3,9 +3,13 @@ function interfacedata = sparsemoments_interfacedata(At,b,c,K,options,solver,pro
 % *************************************************************************
 %% GENERAL DATA EXCHANGE WITH SOLVER
 % *************************************************************************
+% This is for sparse moment relaxations of POPs, wherein the objective must
+% be minimized. Do NOT change the sign of b here to account for dual
+% standard formulation of the model in this code: dual standard forms
+% maximize the objective, which is what YALMIP does by default.
 nvars = size(At,2);
 interfacedata.F_struc = [c, -At];
-interfacedata.c = -b;
+interfacedata.c = b;
 interfacedata.Q = sparse(nvars,nvars);
 interfacedata.f = 0;
 interfacedata.K = K;

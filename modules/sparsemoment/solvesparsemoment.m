@@ -103,6 +103,7 @@ if options.verbose
     disp('Constructing the objective function...')
 end
 [exponents_y, b] = getexponentbase(p,x);
+b = b(:);
 
 % Initialize cone K (sedumi format)
 % Include various cones that YALMIP can handle even if unused
@@ -306,8 +307,7 @@ At.l{2} = -1; % At for non-negativity
 
 % Now combine moments from constraints and objective and strip duplicate
 % monomials to construct conic problem. Overwrite exponents_y since not
-% needed from now on. Must negate b (sign convention since mosek minimizes
-% the primal problem, not the dual)
+% needed from now on.
 % -------------------------------------
 % OLD VERSION
 % exponents_clique = [exponents_clique; exponents_clique_lmi];
@@ -315,7 +315,6 @@ At.l{2} = -1; % At for non-negativity
 % At = [At, Ats];
 % c = [c; cs];
 % -------------------------------------
-b = -b.';
 shift = size(exponents_y,1);
 %exponents_y = [exponents_y; exponents_clique];
 exponents_y = [{exponents_y}, {sparse(1,length(x))}, clique_all_exponents];
@@ -371,8 +370,10 @@ mass = y(sum(unique_exponents,2)==0);
 y = y./mass;
 
 % Get optimal value of the moments-SDP relaxation
-% Need to use y with right scaling here!
-pstar = -b.'*y;
+% Need to use y with right scaling here. We minimize b'*y (difference
+% between minimization and maximization is taken into account previously by
+% handling minus signs)
+pstar = b.'*y;
 
 % Output solver solution if desired
 if nargout > 2
@@ -381,9 +382,11 @@ if nargout > 2
 end
 
 % Output model if needed
+% Change sign of b here to have dual-standard-form problem:
+% max b'*y    s.t.    c - At*y \in K
 if nargout > 3
     model.At = At;
-    model.b = b;
+    model.b = -b;
     model.c = c;
     model.K = K;
 end
