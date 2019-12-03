@@ -187,11 +187,13 @@ for i = 1:num_cliques
     Mpow2hash = Mpow2{1}(:,3:end)*hash;   % faster to search for matching numbers
     rows = [];
     cols = [];
-    Mpow2 = Mpow2{1}.';  % Transpose for speed?
+    Mpow2 = Mpow2{1};
     for kk = 1:length(Nhash)
-        ii = find(Mpow2hash==Nhash(kk));
-        rows = [rows, Mpow2(1,ii)+(Mpow2(2,ii)-1).*K.s(end)];
-        cols = [cols, kk.*ones(1,length(ii))];
+        ii = Mpow2hash==Nhash(kk);
+        ii = find(ii);
+        newrows = Mpow2(ii,1)+(Mpow2(ii,2)-1).*K.s(end);
+        rows = [rows; newrows];
+        cols = [cols; kk.*ones(length(ii),1)];
     end
     c.s = [c.s; sparse(K.s(end)^2, 1)];
     At.s{end+1} = sparse(rows,cols,-1,K.s(end)^2,length(Nhash));
@@ -200,7 +202,8 @@ for i = 1:num_cliques
     % -------------------------------------------------------
     
     % Find which constraints belong to this clique
-    cnstr_indices = cellfun(@(C)all(ismember(C, var_id)), constr_vars);
+%     cnstr_indices = cellfun(@(C)all(ismember(C, var_id)), constr_vars);
+    cnstr_indices = cellfun(@(C)fastismember(C, var_id), constr_vars);
     cnstr_in_clique = find(cnstr_indices);
     num_cnstr_in_clique = length(cnstr_in_clique);
     
@@ -273,7 +276,8 @@ for i = 1:num_cliques
                 index = zeros(length(Phash),1);
                 newvals = [];
                 for tt = 1:length(Phash)
-                    ii = find(Qhash==Phash(tt));
+                    ii = Qhash==Phash(tt);
+                    ii = find(ii);
                     ee = ones(length(ii),1);
                     index(tt) = find(Nhash==Phash(tt));
                     rows = [rows; Q(ii,1)+(Q(ii,2)-1).*nsdp];
