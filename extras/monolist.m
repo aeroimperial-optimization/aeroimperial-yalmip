@@ -40,7 +40,7 @@ if (length(dmax)==1 || all(dmax(1)==dmax)) && islinear(x) && ~isa(x,'ncvar')
     % Use fast method for x^alpha
     if isequal(getbase(x),[zeros(length(x),1) eye(length(x))])
         new_x = recovermonoms(powers,x);
-        return
+%         return
     end
     
     % Monolist on dense vectors is currently extremely slow, but also
@@ -53,7 +53,7 @@ if (length(dmax)==1 || all(dmax(1)==dmax)) && islinear(x) && ~isa(x,'ncvar')
         V=x.'*[1 x];
         ind=funkyindicies(length(x));
         new_x = [1 V(ind(:)).'].';
-        return
+%         return
     elseif (length(x)==4 && dmax==6)
         ind =[    1           2           3           4           5           6           7           8, ...
             9          10          11          12          13          14          15          16, ...
@@ -87,7 +87,7 @@ if (length(dmax)==1 || all(dmax(1)==dmax)) && islinear(x) && ~isa(x,'ncvar')
         v=monolist(x,3);
         V=v(2:end)*v.';
         new_x = [1;V(ind(:))];
-        return
+%         return
     elseif dmax==4 & (1<=length(x)) & length(x)<=4 %& length(x)>1
         v=monolist(x,2);
         V=v(2:end)*v.';
@@ -112,7 +112,7 @@ if (length(dmax)==1 || all(dmax(1)==dmax)) && islinear(x) && ~isa(x,'ncvar')
                 return
             case 4
                 new_x=[1;V([    1     2     3     4     5     6     7     8     9    10    11    12    13    14    19    20    21    35    22    23    37    24    38    52    25    26    40    27    41    55    28    42 56    70    75    76    77    91   105    78    79    93   107    80    94   108   122   136  150    81    82    96   110    83    97   111   125   139   153    84    98   112   126   140  154   168   182   196   210]')];
-                return
+%                 return
             otherwise
         end
     end
