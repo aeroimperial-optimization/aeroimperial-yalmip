@@ -110,7 +110,7 @@ end
 
 if ~isempty(options)
     if options.sos.numblkdg
-        [sol,m,Q,residuals,everything] = solvesos_find_blocks(F,obj,options,params,candidateMonomials);
+        [sol,m,Q,residuals,everything] = solvesos_find_blocks(F,obj,options,params,candidateMonomials,candidateSymmetries);
         return
     end
 end
