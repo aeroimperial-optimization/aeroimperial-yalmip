@@ -298,20 +298,20 @@ end
 expectval = 0;                          % start expecting a name, not a value
 while i <= nargin
     arg = varargin{i};
-    
+
     if ~expectval
         if ~ischar(arg)
             error(sprintf('Expected argument %d to be a string property name.', i));
         end
-        
+
         lowArg = strtrim(lower(arg));
-        
-        j = strmatch(lowArg,names);
+
+        j = strmatch_octavesafe(lowArg,names);
         if isempty(j)                       % if no matches
             error(sprintf('Unrecognized property name ''%s''.', arg));
         elseif length(j) > 1                % if more than one match
             % Check for any exact matches (in case any names are subsets of others)
-            k = strmatch(lowArg,names,'exact');
+            k = strmatch_octavesafe(lowArg,names,'exact');
             if (length(k) == 1)
                 j = k;
             else
