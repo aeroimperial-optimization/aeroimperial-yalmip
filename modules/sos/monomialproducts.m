@@ -1,18 +1,20 @@
-function [newton_m2,N_unique,newton_m2_unique] = monomialproducts(N,n);
+function [newton_m2,N_unique,newton_m2_unique] = monomialproducts(N,n)
 %MONOMIALPRODUCTS  Internal function used for monomial reduction
 
-% Author Johan Löfberg
+% Author Johan Lï¿½fberg
 % $Id: monomialproducts.m,v 1.1 2006-03-30 13:56:54 joloef Exp $
 
 % Exponents in squared monomials
 
 N_unique = [];
 for i = 1:size(N,1)
-    newton_m2{i} = [];
-    n = size(N{i},1);
-    for j = 1:n
-        newton_m2{i} = [newton_m2{i};[(1:n)' repmat(j,n,1) N{i}(1:n,:)+repmat(N{i}(j,:),n,1)]];
-    end
+    [nN,mN] = size(N{i});
+    newton_m2{i} = zeros(nN^2,mN+2);
+    shift = 0;
+    for j = 1:nN
+        newton_m2{i}(shift+1:shift+nN,:) = [(1:nN)' j.*ones(nN,1) N{i}(1:nN,:)+N{i}(j,:)];
+        shift = shift+nN;
+    end    
     % Whoops, double copies of diagonal (we want double copies of non-diagonals though)
     if isempty(newton_m2{i})
         newton_m2_unique{i} = [];
