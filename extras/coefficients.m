@@ -64,12 +64,14 @@ for i = 1:length(p)
         ParametricIndicies = find(ismember(allvar,t));
         % FIX : don't define it here, wait until sparser below. Speed!!
         tempbase = parameterizedbase(p(i),[],recover(t),ParametricIndicies,exponent_p,p_base,allvar);
-        [i,j,k] = unique(full(exponent_p(:,find(~ismember(allvar,t)))),'rows');
+        % [i,j,k] = unique(full(exponent_p(:,find(~ismember(allvar,t)))),'rows');
+        exponents_for_unique = exponent_p(:,~ismember(allvar,t));
+        [i,j,k] = unique(exponents_for_unique,'rows');
         V = sparse(1:length(k),k,1,length(tempbase),max(k))';
         base = [base;V*tempbase];
         if nargout == 2
             keepthese = j(1:max(k));
-            v = recovermonoms(exponent_p(keepthese,find(~ismember(allvar,t))),recover(xvar));
+            v = recovermonoms(exponent_p(keepthese,~ismember(allvar,t)),recover(xvar));
         end
     elseif isa(p,'ncvar')
   
