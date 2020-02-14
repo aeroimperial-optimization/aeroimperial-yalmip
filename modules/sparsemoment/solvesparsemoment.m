@@ -189,13 +189,9 @@ for i = 1:num_cliques
     rows = [];
     cols = [];
     Mpow2 = Mpow2{1};
-    for kk = 1:length(Nhash)
-        ii = Mpow2hash==Nhash(kk);
-        ii = find(ii);
-        newrows = Mpow2(ii,1)+(Mpow2(ii,2)-1).*K.s(end);
-        rows = [rows; newrows];
-        cols = [cols; kk.*ones(length(ii),1)];
-    end
+    [~,TEMP] = ismembertol(Mpow2hash, Nhash);
+    rows = [rows; Mpow2(:,1)+(Mpow2(:,2)-1).*K.s(end)];
+    cols = [cols; TEMP];
     c.s = [c.s; sparse(K.s(end)^2, 1)];
     At.s{end+1} = sparse(rows,cols,-1,K.s(end)^2,length(Nhash));
     whichClique.s = [whichClique.s, i];
@@ -240,10 +236,8 @@ for i = 1:num_cliques
                 Qhash = Q*hash;
                 rows = [rows; (1:length(Qhash))'];
                 vals = [vals; -h_coef(kk).*ones(length(Qhash),1)];
-                for tt = 1:length(Qhash)
-                    index = find(Nhash==Qhash(tt));
-                    cols = [cols; index];
-                end
+                [~,TEMP] = ismembertol(Qhash, Nhash);
+                cols = [cols; TEMP];
             end
             c.f = [c.f; sparse(length(Qhash), 1)];
             At.f{end+1} = sparse(rows,cols,vals,length(Qhash),length(Nhash));
@@ -273,19 +267,12 @@ for i = 1:num_cliques
                 P = Q_unique + repmat([0, 0, g_pow(kk,:)],size(Q_unique,1),1);
                 Phash = P(:,3:end)*hash;   % vectorize with randomness for speed
                 Qhash = Q(:,3:end)*hash;   % faster to search for matching numbers
-                SZ = [nsdp, nsdp];
-                index = zeros(length(Phash),1);
-                newvals = [];
-                for tt = 1:length(Phash)
-                    ii = Qhash==Phash(tt);
-                    ii = find(ii);
-                    ee = ones(length(ii),1);
-                    index(tt) = find(Nhash==Phash(tt));
-                    rows = [rows; Q(ii,1)+(Q(ii,2)-1).*nsdp];
-                    cols = [cols; index(tt).*ee];
-                    newvals = [newvals; ee];
-                end
-                vals = [vals; (-g_coef(kk)).*newvals];
+                [~,LOCB1] = ismembertol(Qhash, Phash);
+                [~,LOCB2] = ismembertol(Phash, Nhash);
+                TEMP = LOCB2(LOCB1);
+                rows = [rows; Q(:,1)+(Q(:,2)-1).*nsdp];
+                cols = [cols; TEMP];
+                vals = [vals; -g_coef(kk).*ones(size(TEMP,1),1)];
             end
             c.s = [c.s; sparse(nsdp^2, 1)];
             At.s{end+1} = sparse(rows,cols,vals,nsdp^2,length(Nhash));
