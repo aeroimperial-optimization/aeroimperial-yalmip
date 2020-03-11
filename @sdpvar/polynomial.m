@@ -37,6 +37,10 @@ if nargin < 4
     symmetries = [];
 end
 
+if isempty(dmin)
+    dmin = 0;
+end
+
 if any(dmin > dmax)
     error('Third argument (dmin) should not be larger than second argument (dmax)');
 end
@@ -45,8 +49,10 @@ if any(dmin < 0)
     error('Only non-negative polynomial degrees possible')
 end
 
-v = monolist(x,dmax,0,symmetries);
-
+%v = monolist(x,dmax,0,symmetries);
+powers = monpowers(length(x),dmax,symmetries);
+powers = powers(sum(powers,2)>=dmin,:);
+v = recovermonoms(powers,x);
 if dmin <= dmax & dmin>0
     s = nchoosek(length(x) + dmin-1,dmin-1);
     v = extsubsref(v,s+1:length(v));
