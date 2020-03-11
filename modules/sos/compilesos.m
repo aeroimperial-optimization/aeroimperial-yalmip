@@ -118,16 +118,20 @@ if isempty(candidateSymmetries)
     for i = 1:length(F)
         candidateSymmetries{i} = [];
     end
+elseif isa(candidateSymmetries,'cell')
+    if length(p)~=length(candidateSymmetries)
+        error('Dimension mismatch between the candidate symmetries and the number of SOS constraints');
+    end
 elseif ismatrix(candidateSymmetries)
+    % Not a cell but a matrix: inflate to cell, assuming symmetry is the
+    % same for every polynomial
+    disp('Assuming all SOS constraints share the specified symmetry...')
     cS=candidateSymmetries;
     candidateSymmetries = cell(1,length(p));
     for i = 1:length(p)
         candidateSymmetries{i} = cS;
     end
-elseif isa(candidateSymmetries,'cell')
-    if length(p)~=length(candidateSymmetries)
-        error('Dimension mismatch between the candidate symmetries and the number of SOS constraints');
-    end
+
 end
 
 % *************************************************************************
