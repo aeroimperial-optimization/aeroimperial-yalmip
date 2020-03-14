@@ -1,6 +1,6 @@
 function [pstar, y, unique_exponents, sol, model] = solvesparsemoment(x, p, h, g, omega, maxMass, options, cliques)
 
-% [pstar,y,exponents,sol,model] = solvesparsemoment(x,p,h,g,omega,options,cliques)
+% [pstar,y,exponents,sol,model] = solvesparsemoment(x,p,h,g,omega,maxMass,options,cliques)
 %       solves the moment relaxation of the standard-form polynomial 
 %       optimization problem (POP)
 %
@@ -56,6 +56,8 @@ function [pstar, y, unique_exponents, sol, model] = solvesparsemoment(x, p, h, g
 if nargin < 6; maxMass = 1; end             % No max mass bound? use 1
 if nargin < 7; options = sdpsettings; end   % No options? use yalmip default
 if nargin < 8; cliques = []; end            % No cliques? set to empty
+if isempty(options); options = sdpsettings; end % Empty options? use yalmip default
+
 
 if options.verbose
     disp(repmat('=',1,40))
