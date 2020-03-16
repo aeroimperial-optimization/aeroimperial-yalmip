@@ -17,8 +17,9 @@ function [pstar, y, unique_exponents, sol, model] = solvesparsemoment(x, p, h, g
 %       * p: the polynomial objective to be MINIMIZED
 %       * h: a vector of polynomial equality constraints, h_i(x)=0
 %       * g: a vector of polynomial inequality constraints, g_i(x)>=0
-%       * omega: the degree of the relaxation (equivalent to the degree of
-%                the Lagrange multipliers for the S-procedure on the SOS side)
+%       * omega: the degree of the relaxation. The max degree of monomials
+%                considered in the moment relaxation and associated SOS
+%                program will be 2*omega.
 %
 %       Optional inputs
 %       ---------------
@@ -65,17 +66,21 @@ if options.verbose
     disp(repmat('=',1,40))
 end
 
-% Odd omega?
-if rem(omega,2) ~= 0
-    omega = 2*ceil(0.5*omega);
-    disp(['Input omega must be even. Increasing omega to ' num2str(omega)])
-end
-
 % Clock
 starttime = tic;
 
 % get number of variables in POP
 numx = numel(x);
+
+% Check if omega is large enough, otherwise increase it
+d = max(degree([h;g]), degree(p));
+d = ceil(d/2);
+if omega < d
+    omega = d;
+    if options.verbose
+        fprintf('Specified relaxation parameter omega too small. Using omega = %i\n',omega);
+    end
+end
 
 % Get cliques of the correlative sparsity pattern if not provided
 % The current code uses a chordal extension of the correlative sparsity
@@ -93,10 +98,6 @@ cnstr = [h; g];
 num_h = numel(h);
 num_g = numel(g);
 num_cnstr = num_h + num_g;
-
-% Get total degree for general moment matrices; make even if odd
-d = max(degree([h;g])+omega, degree(p));
-d = ceil(d/2);
 
 % Get moment indices (= exponents of monomials) and base of the objective
 % Objective will be written as b'*y eventually, here get a temporary b to
@@ -161,10 +162,6 @@ for i = 1:num_cliques
     num_vars = length(var_id);
     var_base = spdiags(ones(num_vars,1),1,num_vars,num_vars+1);
     xloc = sdpvar(num_vars, 1, [], var_id, var_base);
-    zpow = monolistcoeff(num_vars,omega,omega);
-    Qpow = monolistcoeff(num_vars,omega/2,omega/2);
-    nsdp = size(Qpow,1);
-    [Qpow,Q_unique] = monomialproducts({Qpow});
     
     %     % Get the basic moment LMI
     %     % SYMBOLIC VERSION -- SLOW!
@@ -179,9 +176,8 @@ for i = 1:num_cliques
     
     % -------------------------------------------------------
     % Without using symbolic variables
-    % Mpow = monpowers(num_vars,d);           % get exponents for local vars
-    Mpow = monolistcoeff(num_vars,d,d);       % get exponents for local vars
-    K.s(end+1) = size(Mpow,1);                % size of cone (linear)
+    Mpow = monolistcoeff(num_vars,omega,omega);         % get exponents for local vars
+    K.s(end+1) = size(Mpow,1);                          % size of cone (linear)
     [Mpow2,N_unique] = monomialproducts({Mpow});
     [ii,jj,vv] = find(N_unique(:,3:end));                   % find
     clique_all_exponents{i} = sparse(ii,var_id(jj),vv,max(ii),numx); % inflate to exponents of all vars
@@ -229,6 +225,10 @@ for i = 1:num_cliques
             %                 K.f = K.f + size(base,1);
             % ---------------------------------------------------
             % AVOID EXPENSIVE SYMBOLIC OPERATIONS
+            %degh = degree(cnstr(j));
+            degh = full(max( sum(exponents(cnstr(j),xloc), 2)) );
+            degz = 2*omega-degh;
+            zpow = monolistcoeff(num_vars,degz,degz);
             [h_pow, h_coef] = getexponentbase(cnstr(j),xloc);
             rows = [];
             cols = [];
@@ -258,6 +258,11 @@ for i = 1:num_cliques
             %                 K.s(end+1) = nsdp;
             % ---------------------------------------------------
             % AVOID EXPENSIVE SYMBOLIC OPERATIONS
+            degg = full(max( sum(exponents(cnstr(j),xloc), 2)) );
+            degQ = omega - ceil( 0.5*degg );
+            Qpow = monolistcoeff(num_vars,degQ,degQ);
+            nsdp = size(Qpow,1);
+            [Qpow,Q_unique] = monomialproducts({Qpow});
             [g_pow, g_coef] = getexponentbase(cnstr(j),xloc);
             K.s(end+1) = nsdp;
             rows = [];
