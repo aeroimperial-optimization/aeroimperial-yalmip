@@ -141,10 +141,12 @@ exponents_clique_lmi = [];
 whichClique.f = [];
 whichClique.s = [];
 
-% Find variables in each constrains
+% Find variables in each constrains and degree of constraints
 constr_vars = cell(num_cnstr,1);
+constr_degs = zeros(num_cnstr,1);
 for i = 1:num_cnstr
     constr_vars{i} = depends(cnstr(i));
+    constr_degs(i) = degree(cnstr(i));
 end
 
 % Loop over cliques
@@ -226,8 +228,8 @@ for i = 1:num_cliques
             % ---------------------------------------------------
             % AVOID EXPENSIVE SYMBOLIC OPERATIONS
             %degh = degree(cnstr(j));
-            degh = full(max( sum(exponents(cnstr(j),xloc), 2)) );
-            degz = 2*omega-degh;
+            %degh = full(max( sum(exponents(cnstr(j),xloc), 2)) );
+            degz = 2*omega-constr_degs(j);
             zpow = monolistcoeff(num_vars,degz,degz);
             [h_pow, h_coef] = getexponentbase(cnstr(j),xloc);
             rows = [];
@@ -258,8 +260,8 @@ for i = 1:num_cliques
             %                 K.s(end+1) = nsdp;
             % ---------------------------------------------------
             % AVOID EXPENSIVE SYMBOLIC OPERATIONS
-            degg = full(max( sum(exponents(cnstr(j),xloc), 2)) );
-            degQ = omega - ceil( 0.5*degg );
+            %degg = full(max( sum(exponents(cnstr(j),xloc), 2)) );
+            degQ = omega - ceil( 0.5*constr_degs(j) );
             Qpow = monolistcoeff(num_vars,degQ,degQ);
             nsdp = size(Qpow,1);
             [Qpow,Q_unique] = monomialproducts({Qpow});
