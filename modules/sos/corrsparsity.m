@@ -26,8 +26,10 @@ if options.sos.csp
     % Extend? If so, ensure C is diagonally dominant so Cholesky exists.
     % When Cholesky-ing, use the specified reordering
     if options.sos.csp_chordal_extension
+        
+        % Build matrix (useless?)
         Cnorm = norm(C,1);
-        C = chol(C+Cnorm*eye(n));
+        C = C+Cnorm*eye(n);
         if strcmpi(options.sos.csp_ordering,'amd')
             s = symamd(C);
         elseif strcmpi(options.sos.csp_ordering,'rcm')
@@ -36,25 +38,35 @@ if options.sos.csp
             s = 1:n;
         end
         C = chol(C(s,s));
-    end 
-    
-    % Detect sparsity
-    for i = 1:size(C,1)
-        col = s(C(i,:)>0);
-        if i>1
-            is_in = 0;
-            for j = 1:length(D)
-                if all(ismember(col,D{j}))
-                    is_in = 1;
+        C = C.'*C;
+        [~,si] = sort(s);
+        C = C(si,si);
+        % Detect sparsity as maximal cliques
+        D = cliquesFromSpMatD(C);
+        D = D.Set;
+        
+    else
+        % Detect sparsity (YALMIP MANUAL VERSION, not great)
+        for i = 1:size(C,1)
+            col = s(C(i,:)>0);
+            if i>1
+                is_in = 0;
+                for j = 1:length(D)
+                    if all(ismember(col,D{j}))
+                        is_in = 1;
+                    end
                 end
+                if ~is_in
+                    D{end+1} = col;
+                end
+            else
+                D{1} = col;
             end
-            if ~is_in
-                D{end+1} = col;
-            end
-        else
-            D{1} = col;
         end
+        
     end
+    
+    % Display what was found
     if length(D)>1 && options.verbose>0
         [uu,~,oo] = unique(cellfun('prodofsize',D));
         for i = 1:length(uu)
@@ -63,7 +75,10 @@ if options.sos.csp
         end
         fprintf([the_text,'\n']);
     end
+    
 else
+    % Nothing to do
     C = ones(size(exponent_p_monoms,2));
     D{1} = 1:size(exponent_p_monoms,2);
+    
 end
