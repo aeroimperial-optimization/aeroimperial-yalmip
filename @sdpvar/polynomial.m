@@ -49,13 +49,23 @@ if any(dmin < 0)
     error('Only non-negative polynomial degrees possible')
 end
 
-%v = monolist(x,dmax,0,symmetries);
-powers = monpowers(length(x),dmax,symmetries);
-powers = powers(sum(powers,2)>=dmin,:);
-v = recovermonoms(powers,x);
-if dmin <= dmax & dmin>0
-    s = nchoosek(length(x) + dmin-1,dmin-1);
-    v = extsubsref(v,s+1:length(v));
+% multipartite?
+if length(dmax)>1 && any(dmax(1)~=dmax)
+    % symmetries will be ignored
+    v = monolist(x,dmax,dmin,symmetries);
+    c = sdpvar(length(v),1);
+    p = c'*v;
+    return
+else
+    % slightly faster?
+    dmax =  dmax(1);
+    powers = monpowers(length(x),dmax,symmetries);
+    powers = powers(sum(powers,2)>=dmin,:);
+    v = recovermonoms(powers,x);
+    if dmin <= dmax && dmin>0
+        s = nchoosek(length(x) + dmin-1,dmin-1);
+        v = extsubsref(v,s+1:length(v));
+    end
+    c = sdpvar(length(v),1);
+    p = c'*v;
 end
-c = sdpvar(length(v),1);
-p = c'*v;
