@@ -1,7 +1,7 @@
 function monom = recovermonoms(newton_m,x)
 %RECOVERMONOMS Internal function used in SOS programs
 
-if size(newton_m,1)==1 & nnz(newton_m)==0
+if size(newton_m,1)==1 && nnz(newton_m)==0
     monom = 1;
     return
 end
@@ -10,6 +10,14 @@ end
 
 origSize = size(mt,1);
 vars = x.lmi_variables;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Giovanni Fantuzzi, 27 March 2020
+% vars are the indices in ASCENDING ORDER, which causes trouble in some
+% cases. Here, reorder to match the input x.
+% NOTE: code not robust to wrong inputs, but whatever...
+vars = ( x.basis(:,2:end)*vars(:) ).';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 newton_m_extended = spalloc(size(newton_m,1),size(mt,2),nnz(newton_m));
 newton_m_extended(:,vars) = newton_m;
