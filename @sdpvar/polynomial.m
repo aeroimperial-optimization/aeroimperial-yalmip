@@ -1,7 +1,7 @@
 function [p,c,v] = polynomial(x,dmax,dmin,symmetries)
 %POLYNOMIAL Creates parameterized polynomial
 %
-% [p,c,v] = polynomial(x,dmax,dmin)
+% [p,c,v] = polynomial(x,dmax,dmin,symmetries)
 %
 % POLYNOMIAL is a quick way to define a parameterized polynomial p=c'*v,
 % with all monomials of dmin <= degree(p,x) <= dmax. The coefficients in
@@ -51,8 +51,12 @@ end
 
 % multipartite?
 if length(dmax)>1 && any(dmax(1)~=dmax)
-    % symmetries will be ignored
     v = monolist(x,dmax,dmin,symmetries);
+    if ~isempty(symmetries)
+        exponents = getexponentbase(v,x);
+        exponents = applySymmetries(exponents,symmetries);
+        v = recovermonoms(exponents,x);
+    end
     c = sdpvar(length(v),1);
     p = c'*v;
     return
@@ -68,4 +72,16 @@ else
     end
     c = sdpvar(length(v),1);
     p = c'*v;
+end
+
+%end main function
+end
+
+
+% ----------------------------------------------------------------------- %
+function powers = applySymmetries(powers,symmetries)
+% find rows of powers that represent monomials that are invariant under
+% all symmetries specified by the user
+H = rem(powers*symmetries,2)==0;
+powers = powers(all(H,2),:);
 end

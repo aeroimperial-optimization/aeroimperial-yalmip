@@ -23,9 +23,9 @@ newton_m_extended = spalloc(size(newton_m,1),size(mt,2),nnz(newton_m));
 newton_m_extended(:,vars) = newton_m;
 newton_m_extended_hash = newton_m_extended*hash;
 
-newton_m = newton_m';
-newton_m_extended = newton_m_extended';
-mt = mt';
+newton_m = newton_m.';
+newton_m_extended = newton_m_extended.';
+mt = mt.';
 
 monom = x;
 %monom.n = size(newton_m,1);
@@ -75,7 +75,7 @@ for i = find(variable_here)%1:size(newton_m,2)
         end
   %  end
 end
-mt = [mt new_mt]';
+mt = [mt new_mt].';
 mt_hash = [mt_hash;new_mt_hash];
 %mt = mt';
 

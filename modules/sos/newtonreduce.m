@@ -63,6 +63,8 @@ interfacedata.lb = [];
 interfacedata.ub = [];
 
 no_lp_solved = 0;
+hash = rand(size(exponent_p,2),1);
+exponent_p_hash = exponent_p*hash;
 for j = 1:length(exponent_m)
     try
         % Basic idea : Try to find separating hyperplane between Newton polytope and candidate,
@@ -70,9 +72,11 @@ for j = 1:length(exponent_m)
         % Pro : Numerical stability, polynomial (does NOT calculate H-representation of Newton polytope)
         % Con : Slightly slower than explicit convex hull calculation in most cases.
 
-        
-        keep = ismember(exponent_m{j}*2,exponent_p,'rows');
-        dontkeep = 0*keep;
+        % ORIGINAL YALMIP: SEARCH OVER ROWS
+        % keep = ismember(exponent_m{j}*2,exponent_p,'rows');
+        % MUCH FASTER: HASH AND SEARCH IN VECTOR
+        keep = ismembertol(exponent_m{j}*(2.*hash),exponent_p_hash,1e-12);
+        dontkeep = 0.*keep;
         
         if 0
             % Requires that cdd is installed.
