@@ -7,7 +7,7 @@ persistent EXISTTIME
 persistent NCHECKS
 persistent allsolvers
 
-
+warninon
 
 % *************************************************************************
 %% LOOK FOR AVAILABLE SOLVERS
@@ -116,3 +116,11 @@ problem.gppossible = 0;
 % Call Yalmip's native function
 % ***********************************************
 [solver,problem] = selectsolver(options,problem,solvers,0,allsolvers);
+end
+
+
+% Useful stuff
+function yesno = warningon
+s = warning;
+yesno = isequal(s(1).state,'on');
+end
