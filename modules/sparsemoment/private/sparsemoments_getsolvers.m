@@ -7,8 +7,6 @@ persistent EXISTTIME
 persistent NCHECKS
 persistent allsolvers
 
-warninon
-
 % *************************************************************************
 %% LOOK FOR AVAILABLE SOLVERS
 % Finding solvers can be very slow on some systems. To alleviate this
