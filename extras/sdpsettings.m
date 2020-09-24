@@ -1059,6 +1059,9 @@ sdpa_gmp.gammaStar  = 0.7 ;
 sdpa_gmp.epsilonDash  = 1.0E-25 ;
 sdpa_gmp.precision = 200 ;
 sdpa_gmp.path2sdpagmp = path2sdpagmp() ;
+sdpa_gmp.inputName = 'sdpagmp_in';
+sdpa_gmp.outputName = 'sdpagmp_out';
+sdpa_gmp.paramsName = 'param';
 
 function sdplr = setup_sdplr_options
 sdplr.feastol = 1e-5;

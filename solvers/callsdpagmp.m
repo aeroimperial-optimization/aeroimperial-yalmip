@@ -214,14 +214,20 @@ elseif nargin == 9
 end
 ops=OPTION;
 
+% Name of various files
+inputSDPA  = [ops.inputName,'.dat-s'];
+outputSDPA = [ops.outputName,'.out'];
+paramSDPA = [ops.paramsName,'.sdpa'];
+logSDPA = [ops.inputName,'.log'];
+
 % If it exists, file param.sdpa will override anything written in options
 % (for back compatibility), but otherwise a param.sdpa file will be created
 % from the information in options and then deleted in the end.
 cleanup = 0;
-if ~exist([pwd,filesep,'param.sdpa'],'file')
+if ~exist([pwd,filesep,paramSDPA],'file')
     cleanup = 1;
     % write it with default parameters, otherwise failure!
-    fID = fopen([pwd,filesep,'param.sdpa'],'w');
+    fID = fopen([pwd,filesep,paramSDPA],'w');
     fprintf(fID,'%s     unsigned int    maxIteration;           \n',int2str(ops.maxIteration));
     fprintf(fID,'%s     double          0.0 < epsilonStar;      \n',num2str(ops.epsilonStar));
     fprintf(fID,'%s     double          0.0 < lambdaStar;       \n',num2str(ops.lambdaStar));
@@ -236,11 +242,6 @@ if ~exist([pwd,filesep,'param.sdpa'],'file')
     fclose(fID);
 end
 
-% Export to SDPA-GMP, solve in shell and import results
-%Name of input and output files.
-inputSDPA  = 'sdpagmp_in.dat-s';
-outputSDPA = 'sdpagmp_out.out';
-
 % Write SDPA-GMP input file
 gensdpagmpfile(inputSDPA,mDIM,nBLOCK,bLOCKsTRUCT,c,F);
 
@@ -251,23 +252,21 @@ if ispc %For PCs via Bash on Ubuntu on Windows (called through cmd)
     pwdbash = strcat(replaceBetween(pwdbash,1,2,strcat('/mnt/',lower(extractBefore(pwdbash,2)))),'/');
     inputPC = [pwdbash,inputSDPA];
     outputPC = [pwdbash,outputSDPA];
-    paramsPC = [pwdbash,'param.sdpa'];
+    paramsPC = [pwdbash,paramSDPA];
     bashcommand = [path2sdpagmp(),'sdpa_gmp -ds ',inputPC,' -o ',outputPC,' -p ',paramsPC];
     if strcmp(ops.print,'no')
-        bashcommand = [bashcommand,' >> ',pwdbash,'sdpagmp.log'];
+        bashcommand = [bashcommand,' >> ',pwdbash,logSDPA];
     end
     cmdcommand=['bash -c "',bashcommand,'" &'];
     %Solve SDP
     system(cmdcommand);
 else %For UNIX and Macs
-    shellcommand=[path2sdpagmp(),'sdpa_gmp -ds ',inputSDPA,' -o ',outputSDPA,' -p param.sdpa'];
+    shellcommand=[path2sdpagmp(),'sdpa_gmp -ds ',inputSDPA,' -o ',outputSDPA,' -p ',paramSDPA];
     if strcmp(ops.print,'no')
-        system(['echo ',repmat('+',1,100),' >> sdpagmp.log']);
         %Solve SDP
-        shellcommand=[shellcommand,' >> sdpagmp.log'];
+        shellcommand=[shellcommand,' >> ',logSDPA];
         system(shellcommand);
     else
-        system(['echo ',repmat('+',1,100)]);
         %Solve SDP
         system(shellcommand);
     end
@@ -280,12 +279,14 @@ pause(1);
 
 % Import result
 [objVal,x,X,Y,INFO] = sdpagmp_read_output(outputSDPA,mDIM,nBLOCK,full(bLOCKsTRUCT));
+pause(1);
 
 % Clean up tmp files created in this directory
 delete(inputSDPA);
 delete(outputSDPA);
 if cleanup
-    delete('param.sdpa');
+    %delete('param.sdpa');
+    delete(paramSDPA);
 end
 
 INFO.cpusec = cputime-t;
