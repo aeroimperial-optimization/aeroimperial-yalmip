@@ -46,7 +46,7 @@ num_lin  = length(AA.l);
 num_sdp  = length(AA.s);
 num_cnstr = num_free + num_lin + num_sdp;
 for k = 1:num_cnstr
-    if k <= num_free
+    if k < num_free
         % free cone!
         idx = k;
         clique_idx = whichClique.f(idx)+2;
@@ -59,20 +59,24 @@ for k = 1:num_cnstr
         counter_ii = counter_ii + rows.f(idx);
         counter_vv = counter_vv + nonzeros.f(idx);
         
-    elseif k <= num_free + num_lin
-        % linear cone
+    elseif k == num_free
+        % free cone -- mass constraint
         clique_idx = 2;
-        idx = k - num_free;
-        idx_jj = total_shifts(clique_idx) + (1:cols.l(idx));
-        idx_vv = counter_vv + (1:nonzeros.l(idx));
+        idx = k;
+        idx_jj = total_shifts(clique_idx) + (1:cols.f(idx));
+        idx_vv = counter_vv + (1:nonzeros.f(idx));
         localIC = IC(idx_jj);
-        [iA, jA, VV(idx_vv)] = find(AA.l{idx});
+        [iA, jA, VV(idx_vv)] = find(AA.f{idx});
         II(idx_vv) = iA + counter_ii;
         JJ(idx_vv) = localIC(jA);
-        counter_ii = counter_ii + rows.l(idx);
-        counter_vv = counter_vv + nonzeros.l(idx);
+        counter_ii = counter_ii + rows.f(idx);
+        counter_vv = counter_vv + nonzeros.f(idx);
         
-    elseif k <= num_free + num_lin + num_sdp
+    elseif (k > num_free) && (k <= num_free + num_lin)
+        % linear cone
+        % Nothing to do!
+        
+    elseif (k > num_free + num_lin) && (k <= num_free + num_lin + num_sdp)
         % SDP cone
         idx = k - num_free - num_lin;
         clique_idx = whichClique.s(idx)+2;

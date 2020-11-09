@@ -1,4 +1,4 @@
-function [pstar, y, unique_exponents, sol, model] = solvesparsemoment(x, p, h, g, omega, maxMass, options, cliques)
+function [pstar, y, unique_exponents, sol, model] = solvesparsemoment(x, p, h, g, omega, MassValue, options, cliques)
 
 % [pstar,y,exponents,sol,model] = solvesparsemoment(x,p,h,g,omega,maxMass,options,cliques)
 %       solves the moment relaxation of the standard-form polynomial 
@@ -23,10 +23,9 @@ function [pstar, y, unique_exponents, sol, model] = solvesparsemoment(x, p, h, g
 %
 %       Optional inputs
 %       ---------------
-%       * maxMass: the maximum mass of the moment-generating
-%                  measure. This makes the numerics behave a little 
-%                  better compared to fixing the mass to be exactly equal
-%                  to 1 (or any other constant). DEFAULT: 1
+%       * MassValue: total mass of the the moment-generating measure. The default
+%                    value is 1, but setting a different positive value may
+%                    improve the numerical behaviour
 %       * options: yalmip options created with sdpsettings()
 %       * cliques: sets of variables specifying the problem's sparsity
 %                  structure. If not provided, the sparsity is detected
@@ -54,7 +53,7 @@ function [pstar, y, unique_exponents, sol, model] = solvesparsemoment(x, p, h, g
 % 02 Dec 2019
 
 % Optional inputs
-if nargin < 6; maxMass = 1; end             % No max mass bound? use 1
+if nargin < 6; MassValue = 1; end             % No max mass bound? use 1
 if nargin < 7; options = sdpsettings; end   % No options? use yalmip default
 if nargin < 8; cliques = []; end            % No cliques? set to empty
 if isempty(options); options = sdpsettings; end % Empty options? use yalmip default
@@ -111,7 +110,7 @@ b = b(:);
 % Initialize cone K (sedumi format)
 % Include various cones that YALMIP can handle even if unused
 K.f = 0;                    % free variables (to be populated)
-K.l = 2;                    % nonnegative variables (there will be two)
+K.l = 0;                    % nonnegative variables (to be populated)
 K.s = [];                   % semidefinite variables (to be populated)
 K.q = 0;                    % to be ignored
 K.e = 0;                    % to be ignored
@@ -135,6 +134,7 @@ At.f = {};       % constraints c - At*y==0
 At.l = {};       % constraints c - At*y \in K.l
 At.s = {};       % constraints c - At*y \in K.s
 c.f = [];
+c.l = [];
 c.s = [];
 exponents_clique = [];
 exponents_clique_lmi = [];
@@ -152,11 +152,18 @@ end
 % Loop over cliques
 for i = 1:num_cliques
     
-    %     % Display
-    %     if options.verbose
-    %         disp(['Clique number ',num2str(i)])
-    %     end
-    
+    % Display progress?
+    if options.verbose
+        if i==1
+            fprintf('Progress: ')
+        else
+            fprintf(repmat('\b',1,10))
+        end
+        
+        fprintf(repmat('%%',1,floor(10*i/num_cliques)))
+        fprintf(repmat(' ',1,10-floor(10*i/num_cliques)))
+    end
+
     % ID and symbolic variables in this clique
     % Also construct monomials in this clique up to degree omega and
     % PSD matrix of monomials (needed to build moment localizing matrices)
@@ -165,19 +172,10 @@ for i = 1:num_cliques
     var_base = spdiags(ones(num_vars,1),1,num_vars,num_vars+1);
     xloc = sdpvar(num_vars, 1, [], var_id, var_base);
     
-    %     % Get the basic moment LMI
-    %     % SYMBOLIC VERSION -- SLOW!
-    %     % Remove the constant monomial, known (equivalent to solving y_0=1).
-    %     M = monolist(xloc, d);
-    %     M = M*M';
-    %     [new_exponents, base] = getexponentbase(M, x);
-    %     cs = [cs; sparse(size(base,1), 1)];
-    %     Ats{end+1} = -base;
-    %     exponents_clique_lmi = [exponents_clique_lmi; new_exponents];
-    %     K.s(end+1) = size(M,1);
-    
     % -------------------------------------------------------
-    % Without using symbolic variables
+    % Get the basic moment LMI without using symbolic variables
+    % Code is hard to read, but essentially work with powers of monomials
+    % and reduce to random vector for speedy searches
     Mpow = monolistcoeff(num_vars,omega,omega);         % get exponents for local vars
     K.s(end+1) = size(Mpow,1);                          % size of cone (linear)
     [Mpow2,N_unique] = monomialproducts({Mpow});
@@ -195,11 +193,9 @@ for i = 1:num_cliques
     c.s = [c.s; sparse(K.s(end)^2, 1)];
     At.s{end+1} = sparse(rows,cols,-1,K.s(end)^2,length(Nhash));
     whichClique.s = [whichClique.s, i];
-    % exponents_clique_lmi = [exponents_clique_lmi; clique_all_exponents{i}];
     % -------------------------------------------------------
     
     % Find which constraints belong to this clique
-%     cnstr_indices = cellfun(@(C)all(ismember(C, var_id)), constr_vars);
     cnstr_indices = cellfun(@(C)fastismember(C, var_id), constr_vars);
     cnstr_in_clique = find(cnstr_indices);
     num_cnstr_in_clique = length(cnstr_in_clique);
@@ -217,18 +213,10 @@ for i = 1:num_cliques
         % Bingo! Proceed depending on whether it is an equality or
         % inequality constraint
         if j <= num_h
-            %                 % Equality: get equality constraints on moments
-            %                 % Do not remove redundant variables yet
-            %                 temp = cnstr(j).*z; %%% SLOW -- CANNOT RESOLVE
-            %                 [new_exponents, base] = getexponentbase(temp, x);
-            %                 c = [c; sparse(size(base,1), 1)];
-            %                 At{end+1} = -base;
-            %                 exponents_clique = [exponents_clique; new_exponents];
-            %                 K.f = K.f + size(base,1);
-            % ---------------------------------------------------
-            % AVOID EXPENSIVE SYMBOLIC OPERATIONS
-            %degh = degree(cnstr(j));
-            %degh = full(max( sum(exponents(cnstr(j),xloc), 2)) );
+            % HARD TO READ BUT AVOID EXPENSIVE SYMBOLIC OPERATIONS
+            % Essentially, multiply the list of monomials by the constraint
+            % and derive equalities. Work with powers and use random hasing
+            % for speedy searches
             degz = 2*omega-constr_degs(j);
             zpow = monolistcoeff(num_vars,degz,degz);
             [h_pow, h_coef] = getexponentbase(cnstr(j),xloc);
@@ -245,22 +233,14 @@ for i = 1:num_cliques
             end
             c.f = [c.f; sparse(length(Qhash), 1)];
             At.f{end+1} = sparse(rows,cols,vals,length(Qhash),length(Nhash));
-            % exponents_clique = [exponents_clique; clique_all_exponents{i}];
             whichClique.f = [whichClique.f, i];
             K.f = K.f + length(Qhash);
             % ---------------------------------------------------
         else
-            % Inequality: get PSD constraints on
-            % Do not remove redundant variables yet
-            %                 temp = cnstr(j).*Q; %%% SLOW -- CANNOT RESOLVE
-            %                 [new_exponents, base] = getexponentbase(temp, x);
-            %                 cs = [cs; sparse(size(base,1), 1)];
-            %                 Ats{end+1} = -base;
-            %                 exponents_clique_lmi = [exponents_clique_lmi; new_exponents];
-            %                 K.s(end+1) = nsdp;
-            % ---------------------------------------------------
             % AVOID EXPENSIVE SYMBOLIC OPERATIONS
-            %degg = full(max( sum(exponents(cnstr(j),xloc), 2)) );
+            % Essentially, multiply the matrix of monomials Q by the constraint
+            % and derive the moment localizing matrix. 
+            % Work with powers and use random hasing for speedy searches
             degQ = omega - ceil( 0.5*constr_degs(j) );
             Qpow = monolistcoeff(num_vars,degQ,degQ);
             nsdp = size(Qpow,1);
@@ -286,45 +266,33 @@ for i = 1:num_cliques
             c.s = [c.s; sparse(nsdp^2, 1)];
             At.s{end+1} = sparse(rows,cols,vals,nsdp^2,length(Nhash));
             whichClique.s = [whichClique.s, i];
-            % exponents_clique_lmi = [exponents_clique_lmi; clique_all_exponents{i}];
             % ---------------------------------------------------
         end % End if equality/inequality
     end % end for loop over all constraints
 end % end loop over cliques
 
-% Add bounds on mass: two inequalities in cone K.l, modelled in standard
-% conic form as: c-At*y \in K.l
-% * mass is bounded: mass_bound - y_0 >= 0
-% * mass in non-negative: y_0 >= 0
-c.l = [maxMass; sparse(1,1)];
-At.l{1} = 1;  % At for bound on mass
-At.l{2} = -1; % At for non-negativity
-%exponents_clique = [exponents_clique; sparse(2,length(x))];
+% Add constraint on mass
+% MassValue - y0 == 0
+K.f = K.f + 1;
+c.f = [c.f; MassValue];
+At.f{end+1} = 1;
 
 % Now combine moments from constraints and objective and strip duplicate
 % monomials to construct conic problem. Overwrite exponents_y since not
 % needed from now on.
-% -------------------------------------
-% OLD VERSION
-% exponents_clique = [exponents_clique; exponents_clique_lmi];
-% [-b.'; sparse(size(exponents_clique,1),1)];
-% At = [At, Ats];
-% c = [c; cs];
-% -------------------------------------
 shift = size(exponents_y,1);
-%exponents_y = [exponents_y; exponents_clique];
 exponents_y = [{exponents_y}, {sparse(1,length(x))}, clique_all_exponents];
 if options.sparsemoment.mergeCliques
     % Remove duplicate copies of the moments and build the constraints
     % Transform At from cell array into single sparse matrix
     if options.verbose
-        disp('Setting up conic problem (removing duplicate moments)...'); 
+        fprintf('\nSetting up conic problem (removing duplicate moments)...'); 
     end
     [At, b, c, K, unique_exponents] = makeConicUniqueMomentsNew(At, b, c, K, exponents_y, shift, whichClique);
 else
     % TO DO: use matching variable
     if options.verbose
-        disp('Setting up conic problem (use splitting variable)...'); 
+        fprintf('\nSetting up conic problem (use splitting variable)...'); 
     end
     [At, b, c, K, unique_exponents] = makeConicSplittingVariable(At, b, c, K, exponents_y, shift, whichClique, clique_all_exponents);
 end
@@ -346,24 +314,10 @@ try
 catch
     error('Woops, something went wrong in the solver!')
 end
-% ======================================================================= %
-% OLD VERSION: CALL MOSEK OR CDCS DIRECTLY
-% if isempty(options.solver); options.solver = 'mosek'; end
-% switch options.solver
-%     case 'mosek'
-%         [y, sol] = mosekSDP(At,b,c,K,options);
-%         sol.processing_time = setuptime;
-%     case 'cdcs'
-%         [~,y,sol] = cdcs(At,b,c,K,options.cdcs);
-%     otherwise
-%         error('Solver not recognized')
-% end
-% ======================================================================= %
 
 % Get solution and scale y by the zero-th moment
 y = output.Primal;
-mass = y(sum(unique_exponents,2)==0);
-y = y./mass;
+y = y./MassValue;
 
 % Get optimal value of the moments-SDP relaxation
 % Need to use y with right scaling here. We minimize b'*y (difference
