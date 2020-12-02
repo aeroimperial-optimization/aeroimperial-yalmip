@@ -1,41 +1,41 @@
-function [At, b, c, K,  exponents] = makeConicUniqueMoments(AA, b, c, K, exponents, shift)
+function [At, b_in, c, K] = makeConicUniqueMoments(At_in, b_in, c_in, K_in)
 
-% Get unique exponents and combine cells in AA to build the constraint
-% matrix At. Use sparse indexing for speed.
+% Combine constraints on individual cliques into total conic program.
+% Inputs At, c and K are structures with conic constraints for each clique.
+% In this function, b is already assembled so there is no need to operate
+% on it.
 
-% Initalize
-counter_jj = shift;
-counter_ii = 0;
-counter_vv = 0;
-rows = cellfun(@(X)size(X, 1), AA);
-cols = cellfun(@(X)size(X, 2), AA);
-nonzeros = cellfun(@nnz, AA);
-kk = sum(nonzeros);
-II = zeros(kk,1);
-JJ = zeros(kk,1);
-VV = zeros(kk,1);
+% First, an empty cone with all fields required by YALMIP
+K.f = 0;                    % free variables (to be populated)
+K.l = 0;                    % nonnegative variables (to be populated)
+K.s = [];                   % semidefinite variables (to be populated)
+K.q = 0;                    % to be ignored
+K.e = 0;                    % to be ignored
+K.c = 0;                    % to be ignored
+K.r = 0;                    % to be ignored
+K.p = 0;                    % to be ignored
+K.m = 0;                    % to be ignored
+K.scomplex = [];            % to be ignored
+K.xcomplex = [];            % to be ignored
+K.sos = [];                 % to be ignored
+K.schur_funs = [];          % to be ignored
+K.schur_data = [];          % to be ignored
+K.schur_variables = [];     % to be ignored
 
-% Get unique exponents
-% [exponents, ~, IC] = unique(exponents, 'rows');
-[~, IA, IC] = unique(exponents*rand(size(exponents,2),1));
-exponents = exponents(IA,:);
-m = size(exponents, 1);
-b = accumarray(IC, b, [m, 1]);
+% Assemble the free cone
+temp = [At_in(:).f]; At = vertcat(temp{:});
+temp = [c_in(:).f]; c = vertcat(temp{:});
+K.f = size(At,1);
 
-% Assemble At
-for k = 1:length(AA)
-    idx_jj = counter_jj + (1:cols(k));
-    idx_vv = counter_vv + (1:nonzeros(k));
-    localIC = IC(idx_jj);
-    [iA, jA, VV(idx_vv)] = find(AA{k});
-    II(idx_vv) = iA + counter_ii;
-    JJ(idx_vv) = localIC(jA);
-    counter_jj = idx_jj(end);
-    counter_ii = counter_ii + rows(k);
-    counter_vv = counter_vv + nonzeros(k);
-end
+% Assemble the linear constraints
+temp = [At_in(:).l]; temp = vertcat(temp{:}); At = vertcat(At, temp);
+temp = [c_in(:).l]; temp = vertcat(temp{:}); c = vertcat(c, temp);
+K.l = size(temp,1);
 
-At = sparse(II,JJ,VV,sum(rows),m);
+% Assemble the semidefinite constraints
+temp = [At_in(:).s]; At = vertcat(At, temp{:});
+temp = [c_in(:).s]; c = vertcat(c, temp{:});
+K.s = [K_in(:).s];
 
 % End function
 end
