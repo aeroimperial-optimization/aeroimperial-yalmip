@@ -64,6 +64,9 @@ if nargin < 7; options = sdpsettings; end       % No options? use yalmip default
 if nargin < 8; cliques = []; end                % No cliques? set to empty
 if isempty(options); options = sdpsettings; end % Empty options? use yalmip default
 
+% Empty mass?
+if isempty(mass); mass = 1; end
+
 % Display a nice header if needed
 if options.verbose
     disp(repmat('=',1,40))
@@ -128,6 +131,7 @@ end
 [powers, b] = getexponentbase(p,x);
 [ia,ib] = ismembertol(powers*hash, all_moments_hash);
 b0 = full(b(~ia));
+if isempty(b0); b0 = 0; end
 b = sparse(ib(ia), 1, b(ia), num_moments, 1);
 
 
@@ -210,14 +214,14 @@ if options.sparsemoment.mergeCliques
     if options.verbose
         fprintf('\nSetting up conic problem (removing duplicate moments)...'); 
     end
-    [At, b, c, K] = makeConicUniqueMoments(At, b, c, K);
+    [At, b, c, K, PROJ, bshift, y0] = makeConicUniqueMoments(At, b, c, K, options);
 else
     % TO DO: use matching variable
     error('No other option is known: use "mergeCliques" for now!')
     if options.verbose
         fprintf('\nSetting up conic problem (use splitting variable)...'); 
     end
-    [At, b, c, K] = makeConicSplittingVariable(At, b, c, K, powers, shift, whichClique, clique_all_exponents);
+    [At, b, c, K, PROJ, bshift, y0] = makeConicSplittingVariable(At, b, c, K, options);
 end
 
 % Clock setup time
@@ -240,9 +244,9 @@ end
 
 % Get solution, scale y by the zero-th moment and get optimal value of the 
 % moments-SDP relaxation.
-y = output.Primal;
+y = y0 + PROJ*output.Primal;
 y = y./mass;
-pstar = b.'*y + b0;
+pstar = (b.'*output.Primal + bshift)/mass + b0;
 
 % Output solver solution if desired
 if nargout > 3

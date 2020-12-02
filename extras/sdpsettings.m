@@ -534,6 +534,7 @@ moment.rceftol = -1;
 function sparsemoment = setup_sparsemoment_options
 sparsemoment.order = [];
 sparsemoment.mergeCliques = 1;
+sparsemoment.eliminateMoments = true;
 function mpcvx = setup_mpcvx_options
 mpcvx.solver = '';
 mpcvx.absgaptol = 0.25;
