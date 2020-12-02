@@ -1,6 +1,6 @@
-function x = extractmomentsolution(y, exponents)
+function x = extractlinearmoments(y, exponents)
 
-% x = extractmomentsolution(y, moments) reads the degree-1 monomials from a
+% x = extractlinearmoments(y, moments) reads the degree-1 monomials from a
 % moment-SOS solution y. The values in y correspond to moments with
 % exponents in the "exponents" argument.
 

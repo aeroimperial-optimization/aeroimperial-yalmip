@@ -1,4 +1,4 @@
-function [At,c,K,momentID] = buildMomentMatrix(num_vars,var_id,omega,numx,all_moments,g,At,c,K,mass)
+function [At,c,K,momentID,gramMonomials] = buildMomentMatrix(num_vars,var_id,omega,numx,all_moments,g,At,c,K,mass)
 
 % Construct the moment matrix with moments up to degree 2*omega in the variables
 % with identifier specified by var_id. These are a subset of a larger number of
@@ -17,6 +17,9 @@ end
 % Construct exponents in the moment matrix for the given variables
 degM = omega - ceil(0.5*g.degree);
 MMt = monolistcoeff(num_vars, degM, degM);
+if nargout > 4
+    gramMonomials = MMt;
+end
 nsdp = size(MMt,1);
 [MMt,unique_moments] = monomialproducts({MMt});
 MMt = MMt{1};

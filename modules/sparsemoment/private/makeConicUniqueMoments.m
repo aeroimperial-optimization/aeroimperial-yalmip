@@ -1,4 +1,4 @@
-function [At, b_in, c, K, PROJ, bshift, y0] = makeConicUniqueMoments(At_in, b_in, c_in, K_in, options)
+function [At, b_in, c, K, isMomentMatrix, PROJ, bshift, y0] = makeConicUniqueMoments(At_in, b_in, c_in, K_in, isMomentMatrix, options)
 
 % Combine constraints on individual cliques into total conic program.
 % Inputs At, c and K are structures with conic constraints for each clique.
@@ -38,11 +38,13 @@ temp = [c_in(:).s]; c_sdp = vertcat(temp{:});
 K.s = [K_in(:).s];
 
 % Do we have any 1-by-1 PSD cones? Move to linear cones
+% We assume moment matrices are not 1-by-1...
 islin = (K.s==1);
 if any(islin)
     K.l = K.l + sum(islin);
     idx = cumsum(K.s.^2);
     K.s = K.s(~islin);
+    isMomentMatrix = isMomentMatrix(~islin);
     rows = 1:idx(end);
     islin = ismember(rows, idx(islin));
     At_lin = [At_lin; At_sdp(islin,:)];

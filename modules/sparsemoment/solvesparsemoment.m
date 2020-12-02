@@ -77,8 +77,9 @@ end
 % Start the clock
 starttime = tic;
 
-% Get number of variables in POP
+% Get number of variables in POP and yalmip internal IDs
 numx = numel(x);
+xID = depends(x);
 
 % Check if omega is large enough, otherwise increase it
 d = max(degree([h;g]), degree(p));
@@ -114,6 +115,7 @@ num_cnstr = num_h + num_g;
 % The vector all_moments lists all moments in the relaxation
 % The constraints are in sedumi format for simplicity: c - At*y \in K
 [all_moments,At,c,K,momentID] = initializeModel(numx,omega,CD);
+isMomentMatrix = [];
 hash = rand(numx,1);
 all_moments_hash = all_moments*hash;
 [all_moments_hash, idx] = uniquetol(all_moments_hash, 1e-12);
@@ -164,7 +166,7 @@ for i = 1:CD.num_cliques
 
     % Variable ID and symbolic variables in this clique
     % Use low-level YALMIP command for fast construction
-    var_id = CD.cliques{i};
+    var_id = xID(CD.cliques{i});
     num_vars = length(var_id);
     var_base = spdiags(ones(num_vars,1),1,num_vars,num_vars+1);
     xloc = sdpvar(num_vars, 1, [], var_id, var_base);
@@ -172,7 +174,8 @@ for i = 1:CD.num_cliques
     % Get the basic moment LMI without using symbolic variables
     % Code is hard to read, but essentially work with powers of monomials
     % and reduce to random vector for speedy searches
-    [At(i),c(i),K(i),momentID{i}] = buildMomentMatrix(num_vars,var_id,omega,numx,all_moments,[],At(i),c(i),K(i),mass);
+    [At(i),c(i),K(i),momentID{i},gramMonomials{i}] = buildMomentMatrix(num_vars,CD.cliques{i},omega,numx,all_moments,[],At(i),c(i),K(i),mass);
+    isMomentMatrix(end+1) = 1;
     
     % Find which constraints belong to this clique
     cnstr_indices = cellfun(@(C)fastismember(C, var_id), constr_vars);
@@ -190,10 +193,11 @@ for i = 1:CD.num_cliques
         [cdata.pows, cdata.coef] = getexponentbase(cnstr(j),xloc);
         if j <= num_h
             % Equality constraints
-            [At(i),c(i),K(i)] = buildConstraintMatrix(num_vars,var_id,omega,numx,all_moments,cdata,At(i),c(i),K(i),mass);
+            [At(i),c(i),K(i)] = buildConstraintMatrix(num_vars,CD.cliques{i},omega,numx,all_moments,cdata,At(i),c(i),K(i),mass);
         else
             % Moment localizing matrices
-            [At(i),c(i),K(i)] = buildMomentMatrix(num_vars,var_id,omega,numx,all_moments,cdata,At(i),c(i),K(i),mass);
+            [At(i),c(i),K(i)] = buildMomentMatrix(num_vars,CD.cliques{i},omega,numx,all_moments,cdata,At(i),c(i),K(i),mass);
+            isMomentMatrix(end+1) = 0;
         end
         % End if equality/inequality
     end
@@ -214,14 +218,14 @@ if options.sparsemoment.mergeCliques
     if options.verbose
         fprintf('\nSetting up conic problem (removing duplicate moments)...'); 
     end
-    [At, b, c, K, PROJ, bshift, y0] = makeConicUniqueMoments(At, b, c, K, options);
+    [At, b, c, K, isMomentMatrix, PROJ, bshift, y0] = makeConicUniqueMoments(At, b, c, K, isMomentMatrix, options);
 else
     % TO DO: use matching variable
     error('No other option is known: use "mergeCliques" for now!')
     if options.verbose
         fprintf('\nSetting up conic problem (use splitting variable)...'); 
     end
-    [At, b, c, K, PROJ, bshift, y0] = makeConicSplittingVariable(At, b, c, K, options);
+    [At, b, c, K, momentID, PROJ, bshift, y0] = makeConicSplittingVariable(At, b, c, K, momentID, options);
 end
 
 % Clock setup time
@@ -252,6 +256,10 @@ pstar = (b.'*output.Primal + bshift)/mass + b0;
 if nargout > 3
     sol = output.solveroutput; 
     sol.setupTime = setuptime;
+    sol.reducedMoments = output.Primal;
+    sol.momentMatrices = recoverMomentMatrices(output.Primal, At, c, K, isMomentMatrix);
+    sol.gramMonomials = gramMonomials;
+    sol.cliques = CD.cliques;
 end
 
 % Output model if needed

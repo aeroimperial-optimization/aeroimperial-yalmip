@@ -7,6 +7,7 @@ rows = [];
 cols = [];
 vals = [];
 momentID = cell(cliqueData.num_cliques,1);
+gramMonomials = cell(cliqueData.num_cliques,1);
 % Loop over cliques
 for i = 1:cliqueData.num_cliques
     
@@ -42,6 +43,7 @@ for i = 1:cliqueData.num_cliques
     
     % Keep track of indices in the clique
     momentID{i} = [];
+    gramMonomials{i} = [];
     
     % Finally, the moments in this clique
     var_id = cliqueData.cliques{i}(:);
