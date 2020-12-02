@@ -46,7 +46,7 @@ end
 % E.g. CNSTR = x1^2 + x1*x3 + x2 makes C(1:3,1:3) = 1.
 for i = 1:length(CNSTR)
     exponents = getexponentbase(CNSTR(i), x);
-    var_in_cnstr = sum(exponents)>0;
+    var_in_cnstr = sum(exponents, 1)>0;
     C(var_in_cnstr, var_in_cnstr) = 1;
 end
 
