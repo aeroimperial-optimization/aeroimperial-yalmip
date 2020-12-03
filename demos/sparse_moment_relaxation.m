@@ -28,11 +28,11 @@ omega = 2;
 % g = vector of inequality constraints
 x = sdpvar(3,1);
 p = dot(x,x) - sum(x);
-h = [x(1)-x(2)^2; x(2)*x(3)];
+h = [x(1)-x(2)^2; x(2)*x(3); 1-x(2)-x(2)^2+x(3)];
 g = [1-x(1)^2-x(2)^2; 1-x(2)^2-x(3)^2];
 
 % Call the sparse moment solver and attempt to read the optimal x from the
 % degree-1 moments using the "extractmomentsolution" function (this should work
 % for large enough relaxation order omega if the optimal x is unique)
 [pstar, y, exponents, sol, mod] = solvesparsemoment(x,p,h,g,omega);
-x = extractlinearmoments(y, exponents);
+xsol = extractlinearmoments(y, exponents);
