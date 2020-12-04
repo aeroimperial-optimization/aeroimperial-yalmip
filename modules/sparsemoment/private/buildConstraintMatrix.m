@@ -1,4 +1,4 @@
-function [At,c,K,momentID] = buildConstraintMatrix(num_vars,var_id,omega,numx,all_moments,g,At,c,K,mass)
+function [At,c,K,momentID] = buildConstraintMatrix(num_vars,var_id,omega,numx,num_moments,clique_moments,inclique,g,At,c,K,mass)
 
 % Construct the constraint matrix for an equality constraint with moments up to
 % degree 2*omega in the variables with identifier specified by var_id. These are
@@ -12,9 +12,9 @@ M = monolistcoeff(num_vars, degM, degM);
 % Vectorize the exponents in a random way for faster assembly (it works with
 % probability 1). Then, add constant moment (0)
 hash = randn(numx,1);
-moments_hash = all_moments*hash;
-num_moments = length(moments_hash);
+moments_hash = clique_moments*hash;
 moments_hash = [0; moments_hash];
+inclique = [1; inclique+1];
 Mhash = M*hash(var_id);
 
 % Initialize empty row/column indices and values
@@ -31,7 +31,7 @@ for kk = 1:length(g.coef)
     [~,TEMP] = ismembertol(Qhash, moments_hash);
     % Indices and value for LMI in sedumi format
     rows = [rows; (1:num_eq).'];
-    cols = [cols; TEMP];
+    cols = [cols; inclique(TEMP)];
     vals = [vals; -g.coef(kk).*ones(size(TEMP,1),1)];
 end
 

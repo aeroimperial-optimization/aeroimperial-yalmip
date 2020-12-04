@@ -1,4 +1,4 @@
-function [all_moments,At,c,K,momentID] = initializeModel(numx,omega,cliqueData)
+function [all_moments,At,c,K,momentID,gramMonomials] = initializeModel(numx,omega,cliqueData)
 % Initalize an empty SeDuMi model for sparse moment relaxations
 
 % Set stuff up
@@ -6,10 +6,10 @@ numRows = 0;
 rows = [];
 cols = [];
 vals = [];
-momentID = cell(cliqueData.num_cliques,1);
-gramMonomials = cell(cliqueData.num_cliques,1);
+momentID = cell(cliqueData.NoC,1);
+gramMonomials = cell(cliqueData.NoC,1);
 % Loop over cliques
-for i = 1:cliqueData.num_cliques
+for i = 1:cliqueData.NoC
     
     % First, empty cones
     % Include all fields for compatibility, even though most will be ignored.
@@ -46,7 +46,7 @@ for i = 1:cliqueData.num_cliques
     gramMonomials{i} = [];
     
     % Finally, the moments in this clique
-    var_id = cliqueData.cliques{i}(:);
+    var_id = cliqueData.Set{i}(:);
     M = monolistcoeff(length(var_id), 2*omega, 2*omega);
     [ii,jj,vv] = find(M(sum(M,2)>0, :));
     rows = [rows; ii+numRows];

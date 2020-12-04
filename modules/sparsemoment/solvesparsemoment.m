@@ -90,12 +90,13 @@ pstar = (b.'*output.Primal + bshift)/mass + b0;
 
 % Output solver solution if desired
 if nargout > 3
-    sol = output.solveroutput; 
     sol.setupTime = setuptime;
+    sol.solverTime = output.solvertime;
     sol.reducedMoments = output.Primal;
     sol.momentMatrices = recoverMomentMatrices(output.Primal, At, c, K, isMomentMatrix);
     sol.gramMonomials = gramMonomials;
-    sol.cliques = CD.cliques;
+    sol.cliques = CD;
+    sol.solveroutput = output.solveroutput;
 end
 
 % Output model if needed

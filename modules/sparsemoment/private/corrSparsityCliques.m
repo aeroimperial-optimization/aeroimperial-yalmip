@@ -69,4 +69,4 @@ C = C + norm(C,1).*eye(n,n);
 
 % Get cliques -- code from SparseCoLO
 cliques = cliquesFromSpMatD(C,ordering);
-cliques = cliques.Set(:);
+% cliques = cliques.Set(:);

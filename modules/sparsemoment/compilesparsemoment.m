@@ -45,12 +45,13 @@ if isempty(cliques)
     if options.verbose
         disp('Detecting correlative sparsity...');
     end
-    CD.cliques = corrSparsityCliques(x, p, [h; g]);
+    CD = corrSparsityCliques(x, p, [h; g]);
 else
-    CD.cliques = cliques;
+    CD.Set = cliques;
+    CD.NoC = numel(CD.Set);
     clear cliques
 end
-CD.num_cliques = numel(CD.cliques);
+
 
 % List all constraints
 cnstr = [h; g];
@@ -61,7 +62,7 @@ num_cnstr = num_h + num_g;
 % Create an empty model for the problem
 % The vector all_moments lists all moments in the relaxation
 % The constraints are in sedumi format for simplicity: c - At*y \in K
-[all_moments,At,c,K,momentID] = initializeModel(numx,omega,CD);
+[all_moments,At,c,K,momentID,gramMonomials] = initializeModel(numx,omega,CD);
 isMomentMatrix = [];
 hash = rand(numx,1);
 all_moments_hash = all_moments*hash;
@@ -96,32 +97,37 @@ for i = 1:num_cnstr
 end
 
 % Actually build the constraints by looping over the cliques
-for i = 1:CD.num_cliques
+for i = 1:CD.NoC
     
     % Display progress if required
     if options.verbose
         if i==1
-            fprintf('Constructing the constraints (%i cliques)...\n',CD.num_cliques)
+            fprintf('Constructing the constraints (%i cliques)...\n',CD.NoC)
             fprintf('Progress: ')
         else
             fprintf(repmat('\b',1,10))
         end
         
-        fprintf(repmat('%%',1,floor(10*i/CD.num_cliques)))
-        fprintf(repmat(' ',1,10-floor(10*i/CD.num_cliques)))
+        fprintf(repmat('%%',1,floor(10*i/CD.NoC)))
+        fprintf(repmat(' ',1,10-floor(10*i/CD.NoC)))
     end
 
     % Variable ID and symbolic variables in this clique
     % Use low-level YALMIP command for fast construction
-    var_id = xID(CD.cliques{i});
+    var_id = xID(CD.Set{i});
     num_vars = length(var_id);
     var_base = spdiags(ones(num_vars,1),1,num_vars,num_vars+1);
     xloc = sdpvar(num_vars, 1, [], var_id, var_base);
     
+    % Find moments that belong to this clique
+    idx = setdiff(1:numx,CD.Set{i});
+    inclique = find(sum(all_moments(:,idx),2)==0);
+    clique_moments = all_moments(inclique,:);
+    
     % Get the basic moment LMI without using symbolic variables
     % Code is hard to read, but essentially work with powers of monomials
     % and reduce to random vector for speedy searches
-    [At(i),c(i),K(i),momentID{i},gramMonomials{i}] = buildMomentMatrix(num_vars,CD.cliques{i},omega,numx,all_moments,[],At(i),c(i),K(i),mass);
+    [At(i),c(i),K(i),momentID{i},gramMonomials{i}] = buildMomentMatrix(num_vars,CD.Set{i},omega,numx,num_moments,clique_moments,inclique,[],At(i),c(i),K(i),mass);
     isMomentMatrix(end+1) = 1;
     
     % Find which constraints belong to this clique
@@ -140,10 +146,10 @@ for i = 1:CD.num_cliques
         [cdata.pows, cdata.coef] = getexponentbase(cnstr(j),xloc);
         if j <= num_h
             % Equality constraints
-            [At(i),c(i),K(i)] = buildConstraintMatrix(num_vars,CD.cliques{i},omega,numx,all_moments,cdata,At(i),c(i),K(i),mass);
+            [At(i),c(i),K(i)] = buildConstraintMatrix(num_vars,CD.Set{i},omega,numx,num_moments,clique_moments,inclique,cdata,At(i),c(i),K(i),mass);
         else
             % Moment localizing matrices
-            [At(i),c(i),K(i)] = buildMomentMatrix(num_vars,CD.cliques{i},omega,numx,all_moments,cdata,At(i),c(i),K(i),mass);
+            [At(i),c(i),K(i)] = buildMomentMatrix(num_vars,CD.Set{i},omega,numx,num_moments,clique_moments,inclique,cdata,At(i),c(i),K(i),mass);
             isMomentMatrix(end+1) = 0;
         end
         % End if equality/inequality

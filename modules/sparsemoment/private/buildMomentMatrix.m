@@ -1,4 +1,4 @@
-function [At,c,K,momentID,gramMonomials] = buildMomentMatrix(num_vars,var_id,omega,numx,all_moments,g,At,c,K,mass)
+function [At,c,K,momentID,gramMonomials] = buildMomentMatrix(num_vars,var_id,omega,numx,num_moments,clique_moments,inclique,g,At,c,K,mass)
 
 % Construct the moment matrix with moments up to degree 2*omega in the variables
 % with identifier specified by var_id. These are a subset of a larger number of
@@ -27,11 +27,11 @@ MMt = MMt{1};
 % Vectorize the exponents in a random way for faster assembly (it works with
 % probability 1)
 hash = rand(numx,1);
-moments_hash = all_moments*hash;
-num_moments = length(moments_hash);
+moments_hash = clique_moments*hash;
 
 % Add constant moment
 moments_hash = [0; moments_hash];
+inclique = [1; inclique+1];
 
 % Initialize empty row/column indices and values
 rows = [];
@@ -52,7 +52,7 @@ for kk = 1:length(g.coef)
     TEMP = LOCB2(LOCB1);
     % Indices and value for LMI in sedumi format
     rows = [rows; Q(:,1)+(Q(:,2)-1).*nsdp];
-    cols = [cols; TEMP];
+    cols = [cols; inclique(TEMP)];
     vals = [vals; -g.coef(kk).*ones(size(TEMP,1),1)];
 end
 
