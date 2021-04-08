@@ -25,11 +25,13 @@ function output = callsdpagmp(interfacedata)
 
 % Check if max files have already been compiled
 persistent iscompiled
-if isempty(iscompiled); iscompiled = 1; end
+if isempty(iscompiled); iscompiled = 0; end
 if ~iscompiled
     ismex = exist('sdpagmp_read_output');
     if ismex~=3
-        mex -silent -largeArrayDims sdpagmp_read_output.cpp
+        S = which('sdpagmp_read_output.cpp');
+        compileCommand = ['mex -silent -largeArrayDims -outdir ',fileparts(S),' ',S];
+        eval(compileCommand)
     end
     iscompiled = 1;
 end
