@@ -1,5 +1,4 @@
 function y = mpower(x,d)
-%MPOWER (overloaded)
 
 if (numel(d)>1) || (size(x,1) ~= size(x,2))
    error('Inputs must be a scalar and a square matrix. To compute elementwise POWER, use POWER (.^) instead.');
@@ -87,7 +86,7 @@ if (ceil(d)-d>0) | (d<0)
             else
                 y = recover(previous_var);
             end
-        elseif  (size(base,2) == 2) & base(1)==0
+        elseif  (size(base,2) == 2) & base(1)==0 & base(2) > 0
             % Something like a*t^-d
             y = base(2)^d*recover(getvariables(x))^d;
         else

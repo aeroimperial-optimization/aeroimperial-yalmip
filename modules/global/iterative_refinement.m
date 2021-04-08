@@ -15,13 +15,14 @@ function output = iterative_refinement(model)
 % refiner.refinedual         - Whether the dual should be refined [true|false (true)]
 % refiner.solveprimalfirst   - Whether the first iteration is done in primal or dual form [true|false (false)]
 % refiner.primalinprimalform - Whether the primal refinements should be solved in primal or dual form [true|false (false)]
-% refiner.dualinprimalform   - Whether the primal refinements should be solved in primal or dual form [true|false (false)]
+% refiner.dualinprimalform   - Whether the dual refinements should be solved in primal or dual form [true|false (false)]
 %
 % Note : In order to take achieve precisions of more than 15 digits, this
 % solver requires the high precision library GEM to be in matlab's path.
-% This library can be downloaded from https://github.com/jdbancal/gem/releases
-% Best results will be obtained by specifying the problem to be solved in
-% terms of gem or sgem variables.
+% The GEM library is freely available at https://gem-library.github.com
+% When expecting more than 15 digits of precision, problems with
+% non-integer coefficients should be specified in terms of gem or sgem
+% variables.
 %
 % Examples:
 %   1. Solving a linear program without the high precision library
@@ -33,7 +34,7 @@ function output = iterative_refinement(model)
 %
 %   2. Solving the same program with the high precision library
 %   (provides a solution with any desired precision, here 200 digits)
-%     gemWorkingPrecision(220);
+%     gem.workingPrecision(220);
 %     A = gemify(A);
 %     b = gemify(b);
 %     optimize([A*x>=b], sum(x), sdpsettings('solver','refiner','verbose',1,'refiner.precdigits',200))
@@ -146,8 +147,8 @@ function [fval x y z info] = refiner(Aeq, beq, f, K, options, l, fd, ld, beqd, L
 %
 % x can be a combination of scalars as specified by K.f, K.l (a la sedumi).
 %
-% For better results, the above parameters should be provided as gem/sgem
-% objects.
+% When coefficients are not integers, giving the above parameters as
+% gem/sgem objects provides the full precision information to the solver.
 %
 % l should not be given explicitly. If specified, it sets a lower bound on
 % the bounded variables (as specified by K.l).
@@ -169,7 +170,7 @@ function [fval x y z info] = refiner(Aeq, beq, f, K, options, l, fd, ld, beqd, L
 % info provides information about the solving process
 
 % Written by Jean-Daniel Bancal on 28 January 2016
-% last modified according to gihub
+% last modified according to github
 
 
 %% Parameters setting
@@ -198,7 +199,7 @@ end
 if nargin < 18
     % first call
     if options.verbose >= 1
-        disp('Refiner 1.0 - Iterative meta-solver');
+        disp('Refiner 1.1 - Iterative meta-solver');
         if options.verbose == 1
             disp(' ');
             disp('iter-             iteration    global');
@@ -309,11 +310,11 @@ end
 % We make sure the gem default precision is larger than the required
 % precision...
 if highPrecisionSupported
-    if gemWorkingPrecision < -log10(precision)+20
+    if gem.workingPrecision < -log10(precision)+20
         if verbose >= 1
-            warning(['Precision of the GEM library is low (', num2str(gemWorkingPrecision), ' digits), increasing it to ', num2str(-log10(precision)+20), ' digits.']);
+            warning(['Precision of the GEM library is low (', num2str(gem.workingPrecision), ' digits), increasing it to ', num2str(-log10(precision)+20), ' digits.']);
         end
-        gemWorkingPrecision(-log10(precision)+20);
+        gem.workingPrecision(-log10(precision)+20);
     end
 end
 
@@ -537,7 +538,7 @@ else
 end
 
 % Now we estimate the error for all rounds until now:
-dimacsTot = computedimacs(beq0, f, Aeq, xTot, -yTot, [], K);
+dimacsTot = computedimacs(beq0, f, Aeq, xTot, -yTot, [zeros(K.f,1); zTot], K);
 allDimacsTot(nbIter,:) = dimacsTot;
 
 if highPrecisionSupported
