@@ -1,7 +1,15 @@
 function [At, b, c, K, isMomentMatrix, CD, PROJ, bshift, y0, b0, setuptime, all_moments, gramMonomials] = compilesparsemoment(x, p, h, g, omega, mass, options, cliques)
 
 % Compile conic program corresponding to a sparsity-exploiting moment-SOS
-% relaxation of a POP.
+% relaxation of a POP. The conic problem is in the form
+%
+% min   -b'*y
+% s.t.  c - At*y \in K
+%
+% where K is a cone. For moment-SOS relaxations, the cones are:
+%    * K.f: the zero cone (of dimension equal to K.f)
+%    * K.l: the nonnegative orthant (of dimension equal to K.l)
+%    * K.s: a collection of semidefinite cones (each of linear size K.s(i))
 
 % ============================================================================ %
 %                               INITIALIZATION                                 %
@@ -73,16 +81,16 @@ num_moments = size(all_moments, 1);
 % ============================================================================ %
 %                            BUILD OBJECTIVE                                   %
 % ============================================================================ %
-% Build objective as b'*y + b0, where y is the vector of moments except for
+% Build objective as -b'*y - b0, where y is the vector of moments except for
 % the zero moment. The constant term is ignored and added at the end
 if options.verbose
     disp('Constructing the objective function...')
 end
 [powers, b] = getexponentbase(p,x);
 [ia,ib] = ismembertol(powers*hash, all_moments_hash);
-b0 = full(b(~ia));
+b0 = -full(b(~ia));
 if isempty(b0); b0 = 0; end
-b = sparse(ib(ia), 1, b(ia), num_moments, 1);
+b = sparse(ib(ia), 1, -b(ia), num_moments, 1);
 
 
 % ============================================================================ %

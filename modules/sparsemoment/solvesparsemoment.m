@@ -75,7 +75,7 @@ if isempty(mass); mass = 1; end                 % Empty mass? set to 1
 if options.verbose; disp('Solving...'); end
 options.savesolveroutput = 1;
 [solver,problemClass] = sparsemoments_getsolvers(options);
-interfacedata = sparsemoments_interfacedata(At,b,c,K,options,solver,problemClass);
+interfacedata = sparsemoments_interfacedata(At,-b,c,K,options,solver,problemClass);
 try
     eval(['output = ' solver.call '(interfacedata);']);
 catch
@@ -86,7 +86,7 @@ end
 % moments-SDP relaxation.
 y = y0 + PROJ*output.Primal;
 y = y./mass;
-pstar = (b.'*output.Primal + bshift)/mass + b0;
+pstar = -(b.'*output.Primal + bshift)/mass - b0;
 
 % Output solver solution if desired
 if nargout > 3
