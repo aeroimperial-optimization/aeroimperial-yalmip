@@ -1,4 +1,4 @@
-function [At, b, c, K, isMomentMatrix, CD, PROJ, bshift, y0, b0, setuptime, all_moments, gramMonomials] = compilesparsemoment(x, p, h, g, omega, mass, options, cliques)
+function prog = compilesparsemoment(x, p, h, g, omega, mass, options, cliques)
 
 % Compile conic program corresponding to a sparsity-exploiting moment-SOS
 % relaxation of a POP. The conic problem is in the form
@@ -71,7 +71,7 @@ num_cnstr = num_h + num_g;
 % The vector all_moments lists all moments in the relaxation
 % The constraints are in sedumi format for simplicity: c - At*y \in K
 [all_moments,At,c,K,momentID,gramMonomials] = initializeModel(numx,omega,CD);
-isMomentMatrix = [];
+isMomentMatrix = cell(CD.NoC,1);
 hash = rand(numx,1);
 all_moments_hash = all_moments*hash;
 [all_moments_hash, idx] = uniquetol(all_moments_hash, 1e-12);
@@ -129,14 +129,14 @@ for i = 1:CD.NoC
     
     % Find moments that belong to this clique
     idx = setdiff(1:numx,CD.Set{i});
-    inclique = find(sum(all_moments(:,idx),2)==0);
-    clique_moments = all_moments(inclique,:);
+    inclique{i} = find(sum(all_moments(:,idx),2)==0);
+    clique_moments = all_moments(inclique{i},:);
     
     % Get the basic moment LMI without using symbolic variables
     % Code is hard to read, but essentially work with powers of monomials
     % and reduce to random vector for speedy searches
-    [At(i),c(i),K(i),momentID{i},gramMonomials{i}] = buildMomentMatrix(num_vars,CD.Set{i},omega,numx,num_moments,clique_moments,inclique,[],At(i),c(i),K(i),mass);
-    isMomentMatrix(end+1) = 1;
+    [At(i),c(i),K(i),momentID{i},gramMonomials{i}] = buildMomentMatrix(num_vars,CD.Set{i},omega,numx,num_moments,clique_moments,inclique{i},[],At(i),c(i),K(i),mass);
+    isMomentMatrix{i}(end+1) = 1;
     
     % Find which constraints belong to this clique
     cnstr_indices = cellfun(@(C)fastismember(C, var_id), constr_vars);
@@ -154,11 +154,11 @@ for i = 1:CD.NoC
         [cdata.pows, cdata.coef] = getexponentbase(cnstr(j),xloc);
         if j <= num_h
             % Equality constraints
-            [At(i),c(i),K(i)] = buildConstraintMatrix(num_vars,CD.Set{i},omega,numx,num_moments,clique_moments,inclique,cdata,At(i),c(i),K(i),mass);
+            [At(i),c(i),K(i)] = buildConstraintMatrix(num_vars,CD.Set{i},omega,numx,num_moments,clique_moments,inclique{i},cdata,At(i),c(i),K(i),mass);
         else
             % Moment localizing matrices
-            [At(i),c(i),K(i)] = buildMomentMatrix(num_vars,CD.Set{i},omega,numx,num_moments,clique_moments,inclique,cdata,At(i),c(i),K(i),mass);
-            isMomentMatrix(end+1) = 0;
+            [At(i),c(i),K(i)] = buildMomentMatrix(num_vars,CD.Set{i},omega,numx,num_moments,clique_moments,inclique{i},cdata,At(i),c(i),K(i),mass);
+            isMomentMatrix{i}(end+1) = 0;
         end
         % End if equality/inequality
     end
@@ -179,16 +179,23 @@ if options.sparsemoment.mergeCliques
     if options.verbose
         fprintf('\nSetting up conic problem (removing duplicate moments)...'); 
     end
-    [At, b, c, K, isMomentMatrix, PROJ, bshift, y0] = makeConicUniqueMoments(At, b, c, K, isMomentMatrix, options);
+    prog = makeConicUniqueMoments(At, b, c, K, isMomentMatrix, options);
+    prog.CD = CD;
+    prog.b0 = b0;
+    prog.all_moments = all_moments;
+    prog.gramMonomials = gramMonomials;
 else
     % TO DO: use matching variable
-    error('No other option is known: use "mergeCliques" for now!')
     if options.verbose
         fprintf('\nSetting up conic problem (use splitting variable)...'); 
     end
-    [At, b, c, K, momentID, PROJ, bshift, y0] = makeConicSplittingVariable(At, b, c, K, momentID, options);
+    prog = makeConicSplittingVariable(At, b, c, K, isMomentMatrix, inclique, num_moments, options);
+    prog.CD = CD;
+    prog.b0 = b0;
+    prog.all_moments = all_moments;
+    prog.gramMonomials = gramMonomials;
 end
 
 % Clock setup time
-setuptime = toc(starttime);
+prog.setuptime = toc(starttime);
 fprintf('\nCompilation complete!\n'); 

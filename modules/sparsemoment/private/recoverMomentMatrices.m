@@ -3,6 +3,12 @@ function S = recoverMomentMatrices(y, At, c, K, isMomentMatrix)
 % Construct the moment matrices given the solution of a moment-SOS
 % relaxation
 
+% Empty input? Problem not solved, so return nothing
+if isempty(y)
+    S = [];
+    return
+end
+
 % Slack variables and shift for constraints that comes before LMIs
 s = c-At*y;
 shift = K.f + K.l + K.q + K.r;

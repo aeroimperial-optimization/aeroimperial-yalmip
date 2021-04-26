@@ -64,47 +64,55 @@ if isempty(options); options = sdpsettings; end % Empty options? use yalmip defa
 if isempty(mass); mass = 1; end                 % Empty mass? set to 1
 
 % Compile moment problem
-[At,b,c,K,isMomentMatrix,CD,PROJ,bshift,y0,b0,setuptime,all_moments,gramMonomials] = ...
-    compilesparsemoment(x, p, h, g, omega, mass, options, cliques);
+%[At,b,c,K,isMomentMatrix,CD,PROJ,bshift,y0,b0,setuptime,all_moments,gramMonomials] = ...
+prog = compilesparsemoment(x, p, h, g, omega, mass, options, cliques);
+all_moments = prog.all_moments;
 
 % Finally, solve and set outputs. Try to use generic yalmip format to 
 % interface easily with user-preferred choice. Tested with:
 % sedumi, mosek, sdpt3, cdcs, scs 
 % Could be buggy with other solvers.
 % NOTE: ensure we save solver outputs to get the solution
-if options.verbose; disp('Solving...'); end
-options.savesolveroutput = 1;
-[solver,problemClass] = sparsemoments_getsolvers(options);
-interfacedata = sparsemoments_interfacedata(At,-b,c,K,options,solver,problemClass);
-try
-    eval(['output = ' solver.call '(interfacedata);']);
-catch
-    error('Woops, something went wrong in the solver!')
+if options.sparsemoment.mergeCliques
+    if options.verbose; disp('Solving...'); end
+    options.savesolveroutput = 1;
+    [solver,problemClass] = sparsemoments_getsolvers(options);
+    interfacedata = sparsemoments_interfacedata(prog.At,-prog.b,prog.c,prog.K,options,solver,problemClass);
+    try
+        eval(['output = ' solver.call '(interfacedata);']);
+    catch
+        error('Woops, something went wrong in the solver!')
+    end
+    % Get solution, scale y by the zero-th moment and get optimal value of the
+    % moments-SDP relaxation.
+    y = prog.y0 + prog.PROJ*output.Primal;
+    y = y./mass;
+    pstar = -(prog.b.'*output.Primal + prog.bshift)/mass - prog.b0;
+else
+    warning('Cannot solve with splitting moment yet! Returning model only.')
+    y = [];
+    pstar = [];
+    output.solvertime = [];
+    output.Primal = [];
+    output.solveroutput = [];
 end
-
-% Get solution, scale y by the zero-th moment and get optimal value of the 
-% moments-SDP relaxation.
-y = y0 + PROJ*output.Primal;
-y = y./mass;
-pstar = -(b.'*output.Primal + bshift)/mass - b0;
 
 % Output solver solution if desired
 if nargout > 3
-    sol.setupTime = setuptime;
+    sol.setupTime = prog.setuptime;
     sol.solverTime = output.solvertime;
     sol.reducedMoments = output.Primal;
-    sol.momentMatrices = recoverMomentMatrices(output.Primal, At, c, K, isMomentMatrix);
-    sol.gramMonomials = gramMonomials;
-    sol.cliques = CD;
+    sol.momentMatrices = recoverMomentMatrices(output.Primal, prog.At, prog.c, prog.K, prog.isMomentMatrix);
+    sol.gramMonomials = prog.gramMonomials;
+    sol.cliques = prog.CD;
     sol.solveroutput = output.solveroutput;
 end
 
-% Output model if needed
-% Change sign of b here to have dual-standard-form problem:
-% max b'*y    s.t.    c - At*y \in K
+% Output model if needed: dual-standard-form problem:
+% min -b'*y    s.t.    c - At*y \in K
 if nargout > 4
-    model.At = At;
-    model.b = -b;
-    model.c = c;
-    model.K = K;
+    model.At = prog.At;
+    model.b = prog.b;
+    model.c = prog.c;
+    model.K = prog.K;
 end
