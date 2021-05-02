@@ -73,8 +73,8 @@ all_moments = prog.all_moments;
 % sedumi, mosek, sdpt3, cdcs, scs 
 % Could be buggy with other solvers.
 % NOTE: ensure we save solver outputs to get the solution
+if options.verbose; disp('Solving...'); end
 if options.sparsemoment.mergeCliques
-    if options.verbose; disp('Solving...'); end
     options.savesolveroutput = 1;
     [solver,problemClass] = sparsemoments_getsolvers(options);
     interfacedata = sparsemoments_interfacedata(prog.At,-prog.b,prog.c,prog.K,options,solver,problemClass);
@@ -89,12 +89,20 @@ if options.sparsemoment.mergeCliques
     y = y./mass;
     pstar = -(prog.b.'*output.Primal + prog.bshift)/mass - prog.b0;
 else
-    warning('Cannot solve with splitting moment yet! Returning model only.')
-    y = [];
-    pstar = [];
-    output.solvertime = [];
+    %warning('Cannot solve with splitting moment yet! Returning model only.')
+    try
+        initSol = options.admmSolver.sol;
+        options.admmSolver = rmfield(options.admmSolver, 'sol');
+    catch
+        initSol = [];
+    end
+    sol = admmSplitting(prog, options.admmSolver, initSol);
+    y = prog.y0 + prog.yPROJ * sol.y;
+    pstar = -(prog.b.y.' * sol.y + prog.bshift.y)/mass - prog.b0;
+    output.solvertime = sol.time.totalTime;
     output.Primal = [];
-    output.solveroutput = [];
+    output.solverinput = prog;
+    output.solveroutput = sol;
 end
 
 % Output solver solution if desired
@@ -105,6 +113,7 @@ if nargout > 3
     sol.momentMatrices = recoverMomentMatrices(output.Primal, prog.At, prog.c, prog.K, prog.isMomentMatrix);
     sol.gramMonomials = prog.gramMonomials;
     sol.cliques = prog.CD;
+    sol.solverinput = output.solverinput;
     sol.solveroutput = output.solveroutput;
 end
 

@@ -76,6 +76,8 @@ hash = rand(numx,1);
 all_moments_hash = all_moments*hash;
 [all_moments_hash, idx] = uniquetol(all_moments_hash, 1e-12);
 all_moments = all_moments(idx, :);
+[all_moments, sortidx] = sortrows(all_moments); % ensure consistency between runs
+all_moments_hash = all_moments_hash(sortidx);
 num_moments = size(all_moments, 1);
 
 % ============================================================================ %
