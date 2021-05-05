@@ -22,6 +22,10 @@ if nargin < 8; cliques = []; end                % No cliques? set to empty
 if isempty(options); options = sdpsettings; end % Empty options? use yalmip default
 if isempty(mass); mass = 1; end                 % Empty mass? set to 1
 
+% Tolerances for uniqueness
+options.sparsemoment.TOL = 1e-14;
+options.sparsemoment.TOL_DS = 1;
+
 % Display a nice header if needed
 if options.verbose
     disp(repmat('=',1,40))
@@ -70,14 +74,20 @@ num_cnstr = num_h + num_g;
 % Create an empty model for the problem
 % The vector all_moments lists all moments in the relaxation
 % The constraints are in sedumi format for simplicity: c - At*y \in K
+if options.verbose
+    disp('Initializing model...')
+end
 [all_moments,At,c,K,momentID,gramMonomials] = initializeModel(numx,omega,CD);
+if options.verbose
+    disp('Hashing moments...')
+end
 isMomentMatrix = cell(CD.NoC,1);
-hash = rand(numx,1);
+hash = numx .* rand(numx,1);
 all_moments_hash = all_moments*hash;
-[all_moments_hash, idx] = uniquetol(all_moments_hash, 1e-12);
+[all_moments_hash, idx] = uniquetol(all_moments_hash, options.sparsemoment.TOL, 'DataScale', options.sparsemoment.TOL_DS);
 all_moments = all_moments(idx, :);
-[all_moments, sortidx] = sortrows(all_moments); % ensure consistency between runs
-all_moments_hash = all_moments_hash(sortidx);
+% [all_moments, sortidx] = sortrows(all_moments); % ensure consistency between runs
+% all_moments_hash = all_moments_hash(sortidx);
 num_moments = size(all_moments, 1);
 
 % ============================================================================ %
@@ -89,7 +99,7 @@ if options.verbose
     disp('Constructing the objective function...')
 end
 [powers, b] = getexponentbase(p,x);
-[ia,ib] = ismembertol(powers*hash, all_moments_hash);
+[ia,ib] = ismembertol(powers*hash, all_moments_hash, options.sparsemoment.TOL, 'DataScale', options.sparsemoment.TOL_DS);
 b0 = -full(b(~ia));
 if isempty(b0); b0 = 0; end
 b = sparse(ib(ia), 1, -b(ia), num_moments, 1);

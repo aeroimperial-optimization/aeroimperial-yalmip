@@ -6,6 +6,9 @@ function [At,c,K,momentID,gramMonomials] = buildMomentMatrix(num_vars,var_id,ome
 % Use functions from YALMIP to compute the outer product of the monomial vector
 % We also use a probabilistic search method for speed
 
+TOL = 1e-12;
+TOL_DS = 1;
+
 % Is weight g for localizing matrix empty? If so, set it to 1 (in
 % decomposed form)
 if isempty(g)
@@ -16,18 +19,17 @@ end
 
 % Construct exponents in the moment matrix for the given variables
 degM = omega - ceil(0.5*g.degree);
-MMt = monolistcoeff(num_vars, degM, degM);
+MMt = monolistcoeff_fast(num_vars, degM, degM);
 if nargout > 4
     gramMonomials = MMt;
 end
 nsdp = size(MMt,1);
-[MMt,unique_moments] = monomialproducts({MMt});
-MMt = MMt{1};
+[MMt,unique_moments] = monomialproducts_fast(MMt);
 
 % Vectorize the exponents in a random way for faster assembly (it works with
 % probability 1)
-hash = rand(numx,1);
-moments_hash = clique_moments*hash;
+hash = 1e3 .* rand(numx,1);
+moments_hash = full( clique_moments*hash );
 
 % Add constant moment
 moments_hash = [0; moments_hash];
@@ -42,13 +44,13 @@ vals = [];
 for kk = 1:length(g.coef)
     % Multiply the PSD matrix obtained by outer product of monomials by
     % the current monomial in g
-    Q = MMt + repmat([0, 0, g.pows(kk,:)], size(MMt,1), 1);
-    P = unique_moments + repmat([0, 0, g.pows(kk,:)], size(unique_moments,1), 1);
-    Phash = P(:,3:end)*hash(var_id);
-    Qhash = Q(:,3:end)*hash(var_id);
+    Q = MMt + sparse([0, 0, g.pows(kk,:)]);
+    P = unique_moments + sparse([0, 0, g.pows(kk,:)]);
+    Phash = full( P(:,3:end)*hash(var_id) );
+    Qhash = full( Q(:,3:end)*hash(var_id) );
     % Unwind local -> global mapping of variables
-    [~,LOCB1] = ismembertol(Qhash, Phash);
-    [~,LOCB2] = ismembertol(Phash, moments_hash);
+    [~,LOCB1] = ismembertol(Qhash, Phash, TOL, 'DataScale', TOL_DS);
+    [~,LOCB2] = ismembertol(Phash, moments_hash, TOL, 'DataScale', TOL_DS);
     TEMP = LOCB2(LOCB1);
     % Indices and value for LMI in sedumi format
     rows = [rows; Q(:,1)+(Q(:,2)-1).*nsdp];

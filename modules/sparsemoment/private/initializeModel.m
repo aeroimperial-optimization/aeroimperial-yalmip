@@ -47,7 +47,7 @@ for i = 1:cliqueData.NoC
     
     % Finally, the moments in this clique
     var_id = cliqueData.Set{i}(:);
-    M = monolistcoeff(length(var_id), 2*omega, 2*omega);
+    M = monolistcoeff_fast(length(var_id), 2*omega, 2*omega);
     [ii,jj,vv] = find(M(sum(M,2)>0, :));
     rows = [rows; ii+numRows];
     cols = [cols; var_id(jj)];
