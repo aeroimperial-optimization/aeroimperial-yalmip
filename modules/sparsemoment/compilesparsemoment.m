@@ -62,6 +62,7 @@ if isempty(cliques)
     catch
         ordering = 0;
     end
+    if isempty(ordering); ordering = 0; end
     CD = corrSparsityCliques(x, p, [h; g], ordering);
 else
     CD.Set = cliques;
