@@ -57,7 +57,12 @@ if isempty(cliques)
     if options.verbose
         disp('Detecting correlative sparsity...');
     end
-    CD = corrSparsityCliques(x, p, [h; g]);
+    try
+        ordering = options.yalmip.sparsemoment.order;
+    catch
+        ordering = [];
+    end
+    CD = corrSparsityCliques(x, p, [h; g], ordering);
 else
     CD.Set = cliques;
     CD.NoC = numel(CD.Set);

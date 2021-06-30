@@ -21,7 +21,7 @@ for i = 1:length(cliques)
         if (i~=j) && ~isempty(common)
             % Overlapping cliques! check for matches
             for k = 1:size(xsol{i},2)
-                err = abs( (xsol{i}(IA,k) - xsol{j}(IB,:))./(1+xsol{i}(IA)) )<tol;
+                err = abs( (xsol{i}(IA,k) - xsol{j}(IB,:))./( 1+ abs(xsol{i}(IA)) ) )<tol;
                 match = (sum(err)==length(common));
                 if ~match
                     error('Inconsistent minimizers in different cliques! Aborting.')

@@ -96,6 +96,8 @@ elseif orderingSW == 3
 % elseif orderingSW == 1
 %     %% sparse reverse Cuthill-McKee ordering
 %     I = symrcm(sparsityPatternMat);
+else
+    I = 1:nDim;
 end
 %% cholesky decomposition
 [R,p] = chol(sparsityPatternMat(I,I));
