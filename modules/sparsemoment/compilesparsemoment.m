@@ -58,9 +58,9 @@ if isempty(cliques)
         disp('Detecting correlative sparsity...');
     end
     try
-        ordering = options.yalmip.sparsemoment.order;
+        ordering = options.sparsemoment.order;
     catch
-        ordering = [];
+        ordering = 0;
     end
     CD = corrSparsityCliques(x, p, [h; g], ordering);
 else
