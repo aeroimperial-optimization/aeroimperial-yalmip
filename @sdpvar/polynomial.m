@@ -66,10 +66,12 @@ else
     powers = monpowers(length(x),dmax,symmetries);
     powers = powers(sum(powers,2)>=dmin,:);
     v = recovermonoms(powers,x);
-    if dmin <= dmax && dmin>0
-        s = nchoosek(length(x) + dmin-1,dmin-1);
-        v = extsubsref(v,s+1:length(v));
-    end
+    % Original code - wrong!
+    %     if dmin <= dmax && dmin>0
+    %         s = nchoosek(length(x) + dmin-1,dmin-1);
+    %         v = extsubsref(v,s+1:length(v));
+    %     end
+    % GF on 30 Aug 2021
     c = sdpvar(length(v),1);
     p = c'*v;
 end
