@@ -95,8 +95,11 @@ else
         options.admmSolver = rmfield(options.admmSolver, 'sol');
     catch
         initSol = [];
+        options.admmSolver = [];
     end
+%     profile on
     sol = admmSplitting(prog, options.admmSolver, initSol);
+%     profile viewer
     y = prog.y0 + prog.yPROJ * sol.y;
     pstar = -(prog.b.y.' * sol.y + prog.bshift.y)/mass - prog.b0;
     output.solvertime = sol.time.totalTime;
@@ -115,6 +118,7 @@ if nargout > 3
     sol.cliques = prog.CD;
     sol.solverinput = output.solverinput;
     sol.solveroutput = output.solveroutput;
+    sol.prog = prog;
 end
 
 % Output model if needed: dual-standard-form problem:

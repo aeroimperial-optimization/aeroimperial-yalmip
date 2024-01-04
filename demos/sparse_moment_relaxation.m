@@ -34,5 +34,7 @@ g = [1-x(1)^2-x(2)^2; 1-x(2)^2-x(3)^2];
 % Call the sparse moment solver and attempt to read the optimal x from the
 % degree-1 moments using the "extractmomentsolution" function (this should work
 % for large enough relaxation order omega if the optimal x is unique)
-[pstar, y, exponents, sol, mod] = solvesparsemoment(x,p,h,g,omega);
+opts = sdpsettings();
+opts.sparsemoment.mergeCliques = 0;
+[pstar, y, exponents, sol, mod] = solvesparsemoment(x,p,h,g,omega,[],opts);
 xsol = extractlinearmoments(y, exponents);

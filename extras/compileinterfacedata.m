@@ -898,6 +898,16 @@ if ~isempty(K.sos)
 end
 
 % *************************************************************************
+%% GF: Check for zero dual variables in free cone/positive orthant/PSD cones
+% *************************************************************************
+% Remove zero dual variables (hence, constraints) with the aim of resolving
+% numerical problems for SDPs without strict feasibility
+% if isfield(options,'facialReduction') && options.facialReduction
+%     showprogress('Simple facial reduction (by GF)',options.showprogress);
+%     [F_struc,c,K] = facialReduction(F_struc,c,K);
+% end
+
+% *************************************************************************
 %% Equality constraints not supported or supposed to be removed
 % *************************************************************************
 % We may save some data in order to reconstruct

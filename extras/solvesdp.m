@@ -246,6 +246,9 @@ end
 % ******************************************
 % COMPILE IN GENERALIZED YALMIP FORMAT
 % ******************************************
+% if ~isfield(options,'facialReduction')
+%     options.facialReduction = false;
+% end
 [interfacedata,recoverdata,solver,diagnostic,F,Fremoved,ForiginalQuadratics] = compileinterfacedata(F,[],logdetStruct,h,options,0,solving_parametric);
 
 % ******************************************

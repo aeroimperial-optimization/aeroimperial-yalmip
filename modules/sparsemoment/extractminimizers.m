@@ -70,7 +70,7 @@ if iscell(momentMatrices)
     
 else
     % Make a cell and call again
-    x = getMinimizers({momentMatrices},{gramMonomials});
+    x = extractminimizers({momentMatrices},{gramMonomials});
 end
 
 
