@@ -6,7 +6,7 @@ function x = matchsol(cliques,xsol)
 % straightforward.
 
 % Parameters
-tol = 1e-2;
+tol = 5e-2;
 
 % Size of xsol not matching?
 sz = cellfun(@(X) size(X,2), xsol);
@@ -24,9 +24,12 @@ for i = 1:length(cliques)
                 err = abs( (xsol{i}(IA,k) - xsol{j}(IB,:))./( 1+ abs(xsol{i}(IA,k)) ) )<tol;
                 match = sum(err,1)==length(common);
                 if ~any(match)
+                    % disp(xsol{i}(IA,:))
+                    % disp(xsol{j}(IB,:))
                     error('Inconsistent minimizers in different cliques! Aborting.')
                 elseif match(k)~=1
                     % reorder
+                    match(1:k) = 0;
                     l = find(match,1,'first');
                     xsol{j}(:,[k l]) = xsol{j}(:,[l k]);
                 end

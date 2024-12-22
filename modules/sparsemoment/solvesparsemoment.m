@@ -73,12 +73,13 @@ all_moments = prog.all_moments;
 % sedumi, mosek, sdpt3, cdcs, scs 
 % Could be buggy with other solvers.
 % NOTE: ensure we save solver outputs to get the solution
-if options.verbose; disp('Solving...'); end
 if options.sparsemoment.mergeCliques
+    if options.verbose; disp('Compiling solver input...'); end
     options.savesolveroutput = 1;
     [solver,problemClass] = sparsemoments_getsolvers(options);
     interfacedata = sparsemoments_interfacedata(prog.At,-prog.b,prog.c,prog.K,options,solver,problemClass);
     try
+        if options.verbose; disp('Calling solver...'); end
         eval(['output = ' solver.call '(interfacedata);']);
     catch
         error('Woops, something went wrong in the solver!')

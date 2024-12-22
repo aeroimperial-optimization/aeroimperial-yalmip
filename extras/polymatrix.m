@@ -1,4 +1,4 @@
-function [P,C,V] = polymatrix(x,DEG,SIZE,FLAG)
+function [P,C,V] = polymatrix(x,DEG,SIZE,FLAG,SYMM)
 
 % polymatrix.m Construct matrix of polynomials with variable coefficients
 %
@@ -30,9 +30,12 @@ function [P,C,V] = polymatrix(x,DEG,SIZE,FLAG)
 % Check inputs
 if nargin < 3
     error('Not enough inputs.')
-elseif nargin == 3
+elseif nargin < 4
     FLAG = 'full';
-elseif nargin > 4
+    SYMM = [];
+elseif nargin < 5
+    SYMM = [];
+elseif nargin > 5
     error('Too many inputs.')
 end
 
@@ -63,7 +66,7 @@ for i = 1:SIZE(1)
     % Symmetric matrix case
     if strcmpi(FLAG,'symm')
         for j = i:SIZE(2)
-            [q,qc,V] = polynomial(x,DEG);
+            [q,qc,V] = polynomial(x,DEG,0,SYMM);
             P(i,j) = q;
             P(j,i) = q;
             C{i,j} = qc(:);
@@ -72,7 +75,7 @@ for i = 1:SIZE(1)
     else
     % Full matrix
         for j = 1:SIZE(2)
-            [q,qc,V] = polynomial(x,DEG);
+            [q,qc,V] = polynomial(x,DEG,0,SYMM);
             P(i,j) = q;
             C{i,j} = qc(:);
         end

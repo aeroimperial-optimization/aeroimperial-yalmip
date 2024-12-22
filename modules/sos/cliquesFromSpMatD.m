@@ -1,8 +1,6 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [clique] = cliquesFromSpMatD(sparsityPatternMat, orderingSW)
 
 % Modified by M. Kojima,March 25, 2010
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This file is a component of SparseCoLO 
@@ -27,7 +25,6 @@ function [clique] = cliquesFromSpMatD(sparsityPatternMat, orderingSW)
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-
 %
 % 2008-06-13 Waki
 % Caution!

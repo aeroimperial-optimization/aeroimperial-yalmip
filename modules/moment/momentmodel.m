@@ -80,7 +80,7 @@ M{k+1}=u{k}*u{k}';
 % ... and lower degree localization matrices
 M{1} = 1;
 for i = 1:1:k-1;
-    n_i = round(factorial(n+k-i)/(factorial(n)*factorial(k-i)));
+    n_i = nchoosek(n+k-i,n);%round(factorial(n+k-i)/(factorial(n)*factorial(k-i)));
     M{k-i+1} = M{k+1}(1:n_i,1:n_i);
 end
 

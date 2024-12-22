@@ -23,7 +23,7 @@ if isempty(options); options = sdpsettings; end % Empty options? use yalmip defa
 if isempty(mass); mass = 1; end                 % Empty mass? set to 1
 
 % Tolerances for uniqueness
-options.sparsemoment.TOL = 1e-14;
+options.sparsemoment.TOL = 1e-12;
 options.sparsemoment.TOL_DS = 1;
 
 % Display a nice header if needed

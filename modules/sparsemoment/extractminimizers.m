@@ -1,4 +1,4 @@
-function x = extractminimizers(momentMatrices, gramMonomials)
+function x = extractminimizers(momentMatrices, gramMonomials, droptol)
 
 % Attempt to extract minimizers from a set of moment matrices. Inputs are:
 % - momentMatrices: cell array of moment matrices
@@ -6,7 +6,7 @@ function x = extractminimizers(momentMatrices, gramMonomials)
 %                   Gram matrix decomposition
 
 tol = 1e-12;
-droptol = 1e-3;
+if nargin < 3; droptol = 1e-3; end
 if iscell(momentMatrices)
     for k = 1:length(momentMatrices)
         % Rank via SVD decomposition
@@ -22,7 +22,7 @@ if iscell(momentMatrices)
         else
             rankM = length(S);
         end
-        U = U(:,1:drop)*diag(sqrt(S(1:drop)));
+        U = U(:,1:rankM)*diag(sqrt(S(1:rankM)));
         
         % Get column echelon form, like gloptipoly
         [U,basis] = cef(U,1e-6);
