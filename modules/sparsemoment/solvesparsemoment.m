@@ -65,7 +65,7 @@ if isempty(mass); mass = 1; end                 % Empty mass? set to 1
 
 % Compile moment problem
 %[At,b,c,K,isMomentMatrix,CD,PROJ,bshift,y0,b0,setuptime,all_moments,gramMonomials] = ...
-prog = compilesparsemoment(x, p, h, g, omega, mass, options, cliques);
+[prog, relax_order_cnstr] = compilesparsemoment(x, p, h, g, omega, mass, options, cliques);
 all_moments = prog.all_moments;
 
 % Finally, solve and set outputs. Try to use generic yalmip format to 
@@ -116,6 +116,8 @@ if nargout > 3
     sol.reducedMoments = output.Primal;
     sol.momentMatrices = recoverMomentMatrices(output.Primal, prog.At, prog.c, prog.K, prog.isMomentMatrix);
     sol.gramMonomials = prog.gramMonomials;
+    sol.relax_order = omega;
+    sol.relax_order_cnstr = relax_order_cnstr;
     sol.cliques = prog.CD;
     sol.solverinput = output.solverinput;
     sol.solveroutput = output.solveroutput;

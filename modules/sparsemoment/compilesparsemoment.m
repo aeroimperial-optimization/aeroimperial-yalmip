@@ -1,4 +1,4 @@
-function prog = compilesparsemoment(x, p, h, g, omega, mass, options, cliques)
+function [prog, relax_order_cnstr] = compilesparsemoment(x, p, h, g, omega, mass, options, cliques)
 
 % Compile conic program corresponding to a sparsity-exploiting moment-SOS
 % relaxation of a POP. The conic problem is in the form
@@ -121,6 +121,8 @@ for i = 1:num_cnstr
     constr_vars{i} = depends(cnstr(i));
     constr_degs(i) = degree(cnstr(i));
 end
+relax_order_cnstr = zeros(CD.NoC,1);
+
 
 % Actually build the constraints by looping over the cliques
 for i = 1:CD.NoC
@@ -168,6 +170,7 @@ for i = 1:CD.NoC
     for kindex = 1:num_cnstr_in_clique
         % Get value of j and constraint polynomial structure
         j = cnstr_in_clique(kindex);
+        relax_order_cnstr(i) = max(relax_order_cnstr(i), ceil(0.5*constr_degs(j)));
         cdata.degree = constr_degs(j);
         [cdata.pows, cdata.coef] = getexponentbase(cnstr(j),xloc);
         if j <= num_h

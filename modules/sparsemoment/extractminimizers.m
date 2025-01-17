@@ -4,24 +4,28 @@ function x = extractminimizers(momentMatrices, gramMonomials, droptol)
 % - momentMatrices: cell array of moment matrices
 % -  gramMonomials: cell array of the corresponding monomial basis for the
 %                   Gram matrix decomposition
+%
+% NOTE: We should check if the flatness condition holds, but we can just as
+% well attempt to extract the minimizers directly.
 
 tol = 1e-12;
 if nargin < 3; droptol = 1e-3; end
 if iscell(momentMatrices)
     for k = 1:length(momentMatrices)
         % Rank via SVD decomposition
-        cleantol = tol*max(max(abs(momentMatrices{k})));
-        momentMatrices{k} = clean(momentMatrices{k},cleantol);
-        [U,S] = svd(momentMatrices{k});
-        [S,pos] = sort(diag(S),'descend');
-        U = U(:,pos);
-        drop = S(2:end)./( eps + S(1:end-1) );
-        drop = find(drop<droptol,1,'first');
-        if ~isempty(drop)
-            rankM = drop;
-        else
-            rankM = length(S);
-        end
+        % cleantol = tol*max(max(abs(momentMatrices{k})));
+        % momentMatrices{k} = clean(momentMatrices{k},cleantol);
+        % [U,S] = svd(momentMatrices{k});
+        % [S,pos] = sort(diag(S),'descend');
+        % U = U(:,pos);
+        % drop = S(2:end)./( eps + S(1:end-1) );
+        % drop = find(drop<droptol,1,'first');
+        % if ~isempty(drop)
+        %     rankM = drop;
+        % else
+        %     rankM = length(S);
+        % end
+        [rankM, S, U] = svd_rank(momentMatrices{k}, droptol);
         U = U(:,1:rankM)*diag(sqrt(S(1:rankM)));
         
         % Get column echelon form, like gloptipoly
