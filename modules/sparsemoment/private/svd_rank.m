@@ -4,9 +4,9 @@ function [r, S, U] = svd_rank(A, droptol)
 % (1e-8 is used as a tolerance)
 if nargout < 3
     S = svd(A);
-    S = sort(diag(S),'descend');
+    S = sort(S,'descend');
 else
-    [U,S] = svd(A,'econ');
+    [U,S] = svd(A,'econ','vector');
 end
 
 if all(S < 1e-8)

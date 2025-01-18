@@ -184,6 +184,7 @@ for i = 1:CD.NoC
         % End if equality/inequality
     end
     % end for loop over all constraints
+    isMomentMatrix{i} = sparse(isMomentMatrix{i});
 end
 % end loop over cliques
 

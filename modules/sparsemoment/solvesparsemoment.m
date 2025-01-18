@@ -114,14 +114,15 @@ if nargout > 3
     sol.setupTime = prog.setuptime;
     sol.solverTime = output.solvertime;
     sol.reducedMoments = output.Primal;
-    sol.momentMatrices = recoverMomentMatrices(output.Primal, prog.At, prog.c, prog.K, prog.isMomentMatrix);
-    sol.gramMonomials = prog.gramMonomials;
     sol.relax_order = omega;
     sol.relax_order_cnstr = relax_order_cnstr;
     sol.cliques = prog.CD;
     sol.solverinput = output.solverinput;
     sol.solveroutput = output.solveroutput;
     sol.prog = prog;
+    % THE FOLLOWING CAN BE RECOVERED FROM THE REST
+    % sol.momentMatrices = recoverMomentMatrices(output.Primal, prog.At, prog.c, prog.K, prog.isMomentMatrix);
+    % sol.gramMonomials = prog.gramMonomials;
 end
 
 % Output model if needed: dual-standard-form problem:
