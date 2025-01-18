@@ -6,7 +6,8 @@ if nargout < 3
     S = svd(A);
     S = sort(S,'descend');
 else
-    [U,S] = svd(A,'econ','vector');
+    [U,S] = svd(A,'econ'); % gives S as a matrix!
+    S = diag(S);
 end
 
 if all(S < 1e-8)
