@@ -71,10 +71,3 @@ end
 %     % Make a cell and call again
 %     x = extractminimizers({momentMatrices},{gramMonomials});
 % end
-
-
-
-
-
-
-
